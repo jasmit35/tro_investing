@@ -1,11 +1,6 @@
 from traceback import print_exc
 
-from python.models.application.tro_investing import TroInvesting
-
-#=============================================================================
-#  The main entry point for the application.
-#  It creates an instance of the TroInvesting class, configures it, runs it and then deletes it.
-#  If any uncaught exceptions occur, they are printed to the console.
+from python.services.tro_investing import TroInvesting
 
 if __name__ == "__main__":
     try:

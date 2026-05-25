@@ -2,7 +2,8 @@ from argparse import ArgumentParser
 from os import environ
 from pathlib import Path
 
-import yaml
+from ruamel import yaml as pyyaml
+
 from python.services.std_logging import function_logger
 
 #  from python.services.std_report import StdReport
@@ -34,12 +35,14 @@ def set_default_values(app):
 #-----------------------------------------------------------------------------
 @function_logger
 def set_config_file_values(app):
-    #  The config file is expected to be in the etc directory under the current working directory and should be named <app_name>.cfg
+    #  The config file is expected to be in the etc directory under the
+    #  current working directory and should be named <app_name>.cfg
     config_directory = Path.cwd() / "etc"
     config_file = config_directory / f"{app._config.get('app_name')}.cfg"
     app._logger.debug(f"config file is {config_file}\n")
 
-    #  If the config file does not exist or is not a file, log a warning and return. The app will use the default values in this case.
+    #  If the config file does not exist or is not a file, log a warning and return.
+    #  The app will use the default values in this case.
     if not config_file.exists():
         app.report(f"Configuration file {config_file} does not exist. Using defaults.\n")
         return None
@@ -92,6 +95,7 @@ def set_command_line_values(app):
 #-----------------------------------------------------------------------------
 def load_yaml_config_file(file_path, environment):
 
+    yaml = pyyaml.YAML(typ="safe")
     with open(file_path) as f:
-        cfg = yaml.safe_load(f)
-        return cfg[environment]
+        cfg = yaml.load(f)
+        return cfg[environment] 

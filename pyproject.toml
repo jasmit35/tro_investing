@@ -4,4 +4,36 @@ version = "v26.0.0.0.0"
 description = "Load investing transactions into the TRO database"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
-dependencies = []
+dependencies = [
+    "datetime>=6.0",
+    "openpyxl>=3.1.5",
+    "pandas>=3.0.3",
+    "psycopg>=3.3.4",
+    "python-dateutil>=2.9.0.post0",
+    "ruamel-yaml>=0.19.1",
+    "schedule>=1.2.2",
+]
+
+[project.optional.dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pre-commit>=3.8",
+]
+
+[tool.ruff]
+line-length = 120 
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+strict = true
+python-version = "3.13"
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+addopts = "-v --tb=short"
+
