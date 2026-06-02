@@ -35,7 +35,7 @@ class Categories:
     __repr__ = __str__
 
     # ------------------------------------------------------------------------------------------------------------------
-    @function_logger
+    #  @function_logger  #  Generates too much log output to be useful
     def get_id(self, category_name, insert_missing=False):
         sql = "select category_id from tro.categories where category_name = %s"
 
@@ -59,19 +59,16 @@ class Categories:
             values (%s, %s, %s)
             returning category_id
         """
+        
         with self._db_conn.cursor() as cursor:
-            cursor.execute(
-                sql,
-                (
-                    category_data.category_name,
-                    category_data.category_type_fk,
-                    category_data.category_group_fk,
-                ),
-            )
+            cursor.execute(sql,
+                (category_data.category_name, category_data.category_type_fk, category_data.category_group_fk,))
             results = cursor.fetchone()
-            if results:
-                category_id = results[0]
-            return category_id
+            
+        if results:
+            category_id = results[0]
+
+        return category_id
 
     #------------------------------------------------------------------------------------------------------------------
     @function_logger
