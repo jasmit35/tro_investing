@@ -1,17 +1,18 @@
 """
-transactions_processor.py
+investment_transactions_processor.py
 
-This module provides the TransactionsProcessor class for processing
+This module provides the InvestingTransactionsProcessor class for processing
 transactions from an Excel spreadsheet.
 """
-
 from datetime import datetime
 from logging import getLogger
+from pathlib import Path
 
 import pandas as pd
-from python.models.database.accounts import Account
-from python.models.database.categories_table import CategoriesTable
+from python.models.database.accounts import Accounts
+from python.models.database.categories import Categories
 from python.models.database.invest_trans import InvestTrans
+from python.models.database.securites import Securities
 from python.services.std_logging import function_logger
 
 
@@ -19,17 +20,18 @@ from python.services.std_logging import function_logger
 class InvestingTransactionsProcessor:
     def __init__(self, db_conn, report, file_path):
         self._logger = getLogger()
-        self._logger.info(f"Begin 'TransactionsProcessor.__init__({file_path=})")
+        self._logger.info(f"Begin 'InvestingTransactionsProcessor.__init__({file_path=})")
 
         self._db_conn = db_conn
         self._report = report
         self._file_path = file_path
 
-        self._accounts = Account()
-        self._invest_trans = InvestTrans()
-        self._categories_table = CategoriesTable(db_conn)
+        self._accounts = Accounts(self._db_conn)
+        self._invest_trans = InvestTrans(self._db_conn)
+        self._categories = Categories(self._db_conn)
+        self._securities = Securities(self._db_conn)
 
-        self._logger.info("End   'TransactionsProcessor.__init__()")
+        self._logger.info("End   'InvestingTransactionsProcessor.__init__()")
 
     #-------------------------------------------------------------------------------------------------
     def __str__(self):
@@ -50,39 +52,66 @@ class InvestingTransactionsProcessor:
         """
         #  First we need to determine the date range the transactions are for.
         start_date, end_date = self.extract_date_range()
-        #  if start_date is not None:
-        #      use_start_date = start_date
-        #  if finish_date is not None:
-        #      end_date = finish_date
+
         #  Delete the existing transactions for this date range.
         self.delete_obsolete_tranactions(start_date, end_date)
 
-        #  Load data into dataframe and use pandas to clean it up for processingA
+        #  Load data into pandas dataframe
         pd.set_option("future.no_silent_downcasting", True)
         df = pd.read_excel(self._file_path, engine="openpyxl", header=4)
-        #  Remove spaces in the column names
-        df.columns = df.columns.str.replace(" ", "")
-        # Drop rows that are all NaN
-        df = df.dropna(axis=0, how="all")
-        df = df.dropna(axis=1, how="all")  # Drop columns that are all NaN
-        df = df.iloc[:-4]  # Drop the last 4 rows
 
-        # Fill in NaN values with the previous value for the listed columns
-        cols = ["Date", "Account"]
-        df.loc[:, cols] = df.loc[:, cols].ffill()
-        #  df.loc[:,cols] =  df.result.infer_objects(copy=False)
-        #  df.loc[:,cols].infer_objects(copy=True)
+        #  Use pandas to clean the data before processing
+        df = self.massage_data(df)
 
-        #  Replace NaN with 'U' in the Clr column
-        #  cols = ["Clr"]
-        #  df.loc[:, cols] = df.loc[:, cols].fillna("U")
+        #  Save the cleaned data to a new Excel file for reference
+        cleaned_file_path = Path(self._file_path).with_name(self._file_path.stem + "_cleaned" + self._file_path.suffix)
+        df.to_excel(cleaned_file_path, index=False) 
 
-        cols = ["Category"]
-        df.loc[:, cols] = df.loc[:, cols].fillna("")
+        #  Check for any new accounts and add them to the database
+        new_account_names = self._accounts.check_dataframe_for_new_accounts(df)
+        if new_account_names.__len__() > 0:
+            self.report("\n\n    The following new accounts have been added:\n")
+            for account_name in new_account_names:
+                self.report(f"      {account_name}\n")  
+
+        #  Check for any new accounts and add them to the database
+        #  new_account_names = self._accounts.check_dataframe_for_new_accounts(df)
+        #  if new_account_names.__len__() > 0:
+        #      self.report("\n\n    The following new accounts have been added:\n")
+        #      for account_name in new_account_names:
+        #         self.report(f"      {account_name}\n")  
+
         #  Load the transactions from the dataframe
-        # print(df.columns)
         rc = self.load_transactions_from_dataframe(df)
         return rc
+
+    # ----------------------------------------------------------------------
+    @function_logger
+    def massage_data(self, df):
+        """
+        Use pandas to clean the data before processing
+        """
+        # Drop the first and last 4 rows
+        #  df = df.iloc[0:3]
+        df = df.iloc[:-4]
+
+        #  Drop all rows and columns that are completely empty
+        df = df.dropna(axis=0, how="all")  # Drop rows that are all NaN
+        df = df.dropna(axis=1, how="all")  # Drop columns that are all NaN
+
+        #  Clean up the column names
+        df.columns = df.columns.str.replace(" ", "")
+        df.rename(columns={'Quote/Price': 'Price'}, inplace=True)
+
+        # Fill in blank values with the previous value for the listed columns
+        cols = ["Date", "Account"]
+        df.loc[:, cols] = df.loc[:, cols].ffill()
+
+        # Fill in NaN values with ""
+        cols = ["Symbol, Category, Memo"]
+        #  df.loc[:, cols] = df.loc[:, cols].fillna("")
+
+        return df   
 
     # ----------------------------------------------------------------------
     @function_logger
@@ -100,25 +129,29 @@ class InvestingTransactionsProcessor:
             # Use data from each dataframe row to create InvestTrans object and insert it
             nt = InvestTrans()
 
-            nt.account_fk = self._accounts.get_id(self._db_conn, row.Account)
-            nt.transaction_date = row.Date
-            nt.action = row.Action
-            nt.security_fk = 0
-            nt.symbol = row.Symbol
-            nt.category_fk = self._categories_table.get_id_using_name(row.Category)
-            nt.memo = row.Memo
-            nt.price = row.Price
-            nt.shares = row.Shares
-            nt.commission = row.Commission
-            nt.amount = row.Cash
+            #  Get the values for the foreign keys
+            nt.account_fk  = self._accounts.get_id(row.Account, True)
+            nt.security_fk = self._securities.get_id(row.Symbol, row.Security, True)
+            nt.category_fk = self._categories.get_id(row.Category, True)
 
+            #  Set the remaining values for the transaction record.
+            nt.transaction_date = row.Date
+            nt.action           = row.Action
+            nt.symbol           = row.Symbol
+            nt.memo             = row.Memo
+            nt.price            = row.Price
+            nt.shares           = row.Shares
+            nt.commission       = row.Commission
+            nt.amount           = row.Cash
+
+            #  You will feel a slight push...
             self._invest_trans.insert(self._db_conn, nt)
 
-
+            #  Report the transaction that was just added.
             amount_string = f"{nt.amount:10.2f}"
             self.report(
                 f"      {row.Account.ljust(35)} {nt.transaction_date.strftime('%m/%d/%y').ljust(10)} \
-                     {row.Category.ljust(35)} {amount_string} \n"
+                     {str(row.Category).ljust(35)} {amount_string} \n"
             )
 
         return 0
@@ -134,22 +167,7 @@ class InvestingTransactionsProcessor:
         end_date = date_header_split[5]
         return start_date, end_date
 
-    #  ----------------------------------------------------------------------
-    @function_logger
-    def _set_category_name(self, row):
-        if row.Num == "Added":
-            return "Added"
-        if row.Num == "Bought":
-            return "Bought"
-        if row.Num == "Removed":
-            return "Removed"
-        if row.Num == "StkSplit":
-            return "Stock Split"
-        if row.Num == "Sold":
-            return "Sold"
-
-        return "Unknown"
-
+    # ----------------------------------------------------------------------
     def delete_obsolete_tranactions(self, start_date, end_date):
         sql = """
         DELETE FROM tro.transactions

@@ -86,7 +86,8 @@ class TroInvesting(StdApp):
         #  every 15 minutes for the next 24 hours process the stagged files
         #  stop_time = datetime.timedelta(hours=24)
         #  every(15).minutes.until(stop_time).do(this_app.process_stagged_files)
-        stop_time = timedelta(hours=1)
+        stop_time = timedelta(minutes=15)
+        #  stop_time = timedelta(hours=1)
         #  stop_time = timedelta(hours=24)
         every(5).minutes.until(stop_time).do(self.process_stagged_files)
         #  every(60).minutes.until(stop_time).do(self.process_stagged_files)

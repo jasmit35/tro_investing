@@ -1,2 +1,5 @@
-# Workflows
-Template repository used to create a project using my Workflow technology.
+# TRO Investing
+
+Load investing transactions from Excel into the TRO database.
+
+

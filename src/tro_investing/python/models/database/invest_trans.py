@@ -19,7 +19,7 @@ class InvestTrans:
     transaction_id: int = None
     account_fk: int = None
     transaction_date: datetime.date = None
-    action: str =  None
+    action: str = None
     security_fk: int = None
     symbol: str = ""
     category_fk: int = None
@@ -28,10 +28,9 @@ class InvestTrans:
     shares: float = 0.0
     commission: float = 0.0
     amount: float = 0.0
-    data_source: str = 'quicken'
+    data_source: str = "quicken"
 
-
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def insert(self, db_conn, trans) -> None:
         sql = """
             insert into tro.invest_trans
@@ -56,9 +55,6 @@ class InvestTrans:
                     trans.amount,
                 ),
             )
-
-
-
 
 
 """
