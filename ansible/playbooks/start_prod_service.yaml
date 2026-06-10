@@ -1,0 +1,28 @@
+---
+
+- name: Start prod service 
+  hosts: prod-swarm-manager-2
+
+  tasks:
+
+    - name: Start the TRO Investing service on the prod swarm cluster.
+      community.docker.docker_swarm_service:
+        name: tro_investing 
+        image: jasmit/tro_investing:v26.1.0.1
+        env:
+          ENVIRONMENT: "prod"
+        debug: false 
+        mounts:
+          - source=/mnt/nfs_storage/prod/tro_investing/logs
+            target=/opt/app/tro_investing/logs
+            type=bind
+          - source=/mnt/nfs_storage/prod/tro_investing/reports
+            target=/opt/app/tro_investing/reports
+            type=bind
+          - source=/mnt/nfs_storage/prod/tro_investing/stage
+            target=/opt/app/tro_investing/stage
+            type=bind
+
+#  Example:
+#  ansible-playbook playbooks/start_prod_service.yaml
+...

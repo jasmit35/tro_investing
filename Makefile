@@ -4,14 +4,6 @@ include env
 
 #-------------------------------------------------------------------------------
 
-.PHONY: clean
-clean: ## Clean unneeded files from the project's directories 
-	@echo "🚀  Cleaning ..."
-	-rm src/tro_investing/logs/*.log
-	-rm src/tro_investing/reports/*.rpt
-
-#-------------------------------------------------------------------------------
-
 .PHONY: build-image
 build-image: ## Build the Docker image
 	@echo "🚀  Building our docker image..."
@@ -25,23 +17,10 @@ build-image: ## Build the Docker image
 
 #-------------------------------------------------------------------------------
 
-.PHONY: docker-run
-docker-run: ## Run this project's container
-	@echo "🚀  Running the container..."
-	@docker container run \
-		--detach \
-		--name $(app_name) \
-		--mount type=bind,source=$(app_nfs_home)/logs,target=$(app_home)/logs \
-		--mount type=bind,source=$(app_nfs_home)/reports,target=$(app_home)/reports \
-		--mount type=bind,source=$(app_nfs_home)/stage,target=$(app_home)/stage \
-		jasmit/$(app_name):$(app_version)
-
-#-------------------------------------------------------------------------------
-
 .PHONY: start-service 
 start-service: ## Start a service on the swarm cluster using the image
 	@echo "🚀  Starting the service ..."
-	ansible-playbook ansible/playbooks/start_service.yaml
+	ansible-playbook -i ansible/inventory/test_swarm.yaml ansible/playbooks/start_$(environment)_service.yaml
 
 
 ################################################################################

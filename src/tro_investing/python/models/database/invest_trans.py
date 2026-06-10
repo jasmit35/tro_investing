@@ -16,13 +16,13 @@ class InvalidTransactionException(Exception):
 
 @dataclass
 class InvestTrans:
-    transaction_id: int = None
-    account_fk: int = None
+    transaction_id: int = 0 
+    account_fk: int = 0 
     transaction_date: datetime.date = None
-    action: str = None
-    security_fk: int = None
+    action: str = ""
+    security_fk: int = 0
     symbol: str = ""
-    category_fk: int = None
+    category_fk: int = 0
     memo: str = ""
     price: float = 0.0
     shares: float = 0.0

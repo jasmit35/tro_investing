@@ -6,6 +6,7 @@ transactions from an Excel spreadsheet.
 """
 from datetime import datetime
 from logging import getLogger
+from math import isnan
 from pathlib import Path
 
 import pandas as pd
@@ -33,13 +34,13 @@ class InvestingTransactionsProcessor:
 
         self._logger.info("End   'InvestingTransactionsProcessor.__init__()")
 
-    #-------------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------------
     def __str__(self):
         return f"InvestingTransactionsProcessor({self._file_path=})"
 
     __repr__ = __str__
 
-    #--------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------
     #  Short cut to report a single message
     def report(self, msg):
         self._report.report(msg)
@@ -86,25 +87,35 @@ class InvestingTransactionsProcessor:
         """
         Use pandas to clean the data before processing
         """
-        # Drop the first and last 4 rows
-        #  df = df.iloc[0:3]
+        # Drop the last 4 rows
         df = df.iloc[:-4]
 
         #  Drop all rows and columns that are completely empty
-        df = df.dropna(axis=0, how="all")  # Drop rows that are all NaN
-        df = df.dropna(axis=1, how="all")  # Drop columns that are all NaN
+        df = df.dropna(axis=0, how="all")
+        df = df.dropna(axis=1, how="all")
 
-        #  Clean up the column names
-        df.columns = df.columns.str.replace(" ", "")
-        df.rename(columns={'Quote/Price': 'Price'}, inplace=True)
+        #  Assign the desired column names
+        df.columns = ['Date', 'Account', 'Action', 'Symbol', 'Security', 'Category', 'Memo',
+            'Price', 'Shares', 'Commission', 'Cash', 'Invested']
+
+        #  Drop the rows that don't have an action since they are not transactions.
+        df.dropna(subset=['Action'], inplace=True)
 
         # Fill in blank values with the previous value for the listed columns
         cols = ["Date", "Account"]
         df.loc[:, cols] = df.loc[:, cols].ffill()
 
-        # Fill in NaN values with ""
-        cols = ["Symbol, Category, Memo"]
-        #  df.loc[:, cols] = df.loc[:, cols].fillna("")
+        # Fill in some of the NaN values
+        df.fillna({"Symbol": "Unknown"}, inplace=True)
+        df.fillna({"Security": "Unknown"}, inplace=True)
+        
+        df.fillna({"Category": ""}, inplace=True)
+        df.fillna({"Memo": ""}, inplace=True)
+        
+        df.fillna({"Shares": 0}, inplace=True)
+        df.fillna({"Commission": 0}, inplace=True)
+        df.fillna({"Cash": 0}, inplace=True)
+
 
         return df   
 
@@ -121,6 +132,8 @@ class InvestingTransactionsProcessor:
             if type(row.Date) is str and row.Date[:7] == "BALANCE":
                 continue
 
+            #  Skip rows that don't have a valid security.
+
             # Use data from each dataframe row to create InvestTrans object and insert it
             nt = InvestTrans()
 
@@ -134,10 +147,14 @@ class InvestingTransactionsProcessor:
             nt.action           = row.Action
             nt.symbol           = row.Symbol
             nt.memo             = row.Memo
+
             nt.price            = row.Price
             nt.shares           = row.Shares
             nt.commission       = row.Commission
-            nt.amount           = row.Cash
+            if isnan(row.Invested): 
+                nt.amount = row.Cash
+            else:
+                nt.amount = row.Invested
 
             #  You will feel a slight push...
             self._invest_trans.insert(self._db_conn, nt)
@@ -165,11 +182,10 @@ class InvestingTransactionsProcessor:
     # ----------------------------------------------------------------------
     def delete_obsolete_tranactions(self, start_date, end_date):
         sql = """
-        DELETE FROM tro.transactions
-        WHERE transaction_date >= %s
-        AND transaction_date <= %s
-        AND DATA_SOURCE = 'quicken'
-        """
+            DELETE FROM tro.invest_trans 
+            WHERE transaction_date >= %s AND transaction_date <= %s 
+            AND DATA_SOURCE = 'quicken'
+            """
         with self._db_conn.cursor() as cursor:
             cursor.execute(sql, (start_date, end_date))
             return cursor.rowcount
