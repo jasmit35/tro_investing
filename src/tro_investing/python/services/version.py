@@ -3,7 +3,7 @@ version.py
 
 """
 
-__version__ = "v26.0.0.0.1"
+__version__ = "v26.1.0.0.1"
 
 
 def get_version():

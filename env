@@ -1,4 +1,4 @@
-# This file is used to set environment variables for the Makefile
+#  This file is used to set environment variables for the Makefile
 
 app_name = "tro_investing"
 app_version = "v26.1.0.0.1"
@@ -6,5 +6,5 @@ environment = "test"
 
 #  Don't change these unless you know what you're doing
 app_home = "/opt/app/$(app_name)"
-app_nfs_home = "/Volumes/NFSStorage/$(environment)/tro_investing"
-#  app_nfs_home = "/mnt/nfs_storage/$(environment)/tro_investing"
+app_nfs_home = "/mnt/nfs_storage/$(environment)/tro_investing"
+

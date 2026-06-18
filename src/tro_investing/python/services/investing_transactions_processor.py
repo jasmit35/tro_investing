@@ -1,5 +1,5 @@
 """
-investment_transactions_processor.py
+investing_transactions_processor.py
 
 This module provides the InvestingTransactionsProcessor class for processing
 transactions from an Excel spreadsheet.
@@ -51,10 +51,9 @@ class InvestingTransactionsProcessor:
         """
         Process the transactions in the Excel file.
         """
-        #  First we need to determine the date range the transactions are for.
+        #  First determine the date range the transactions are for.
+        #  Then delete the existing transactions for that date range.
         start_date, end_date = self.extract_date_range()
-
-        #  Delete the existing transactions for this date range.
         self.delete_obsolete_tranactions(start_date, end_date)
 
         #  Load data into pandas dataframe

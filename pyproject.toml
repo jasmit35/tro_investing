@@ -1,6 +1,6 @@
 [project]
 name = "tro_investing"
-version = "v26.0.0.0.0"
+version = "v26.1.0.0.1"
 description = "Load investing transactions into the TRO database"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
@@ -26,7 +26,7 @@ dev = [
 
 [tool.ruff]
 line-length = 120 
-target-version = "py312"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -38,9 +38,4 @@ python-version = "3.13"
 [tool.pytest.ini_options]
 testpaths = ["test"]
 addopts = "-v --tb=short"
-
-[dependency-groups]
-dev = [
-    "ruff>=0.15.14",
-]
 
