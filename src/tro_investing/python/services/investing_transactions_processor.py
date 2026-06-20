@@ -74,6 +74,9 @@ class InvestingTransactionsProcessor:
             for account_name in new_account_names:
                 self.report(f"      {account_name}\n")  
 
+        #  Check for any new categories and add them to the database
+        new_category_names = self._categories.check_dataframe_for_new_categories(df)
+
         #  Load the transactions from the dataframe
         rc = self.load_transactions_from_dataframe(df)
         self._report.print_footer(rc)
@@ -132,6 +135,8 @@ class InvestingTransactionsProcessor:
                 continue
 
             #  Skip rows that don't have a valid security.
+            if type(row.Security) is None:
+                continue    
 
             # Use data from each dataframe row to create InvestTrans object and insert it
             nt = InvestTrans()
@@ -155,7 +160,7 @@ class InvestingTransactionsProcessor:
             else:
                 nt.amount = row.Invested
 
-            #  You will feel a slight push...
+            #  
             self._invest_trans.insert(self._db_conn, nt)
 
             #  Report the transaction that was just added.

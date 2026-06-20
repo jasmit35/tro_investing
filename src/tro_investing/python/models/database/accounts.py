@@ -17,11 +17,11 @@ class Accounts:
     # ------------------------------------------------------------------------------------------------------------------
     def __init__(self, db_conn):
         self._logger = getLogger()
-        self._logger.info(f"Begin 'Categories.__init__' arguments - ({db_conn=})")
+        self._logger.info(f"Begin 'Accounts.__init__' arguments - ({db_conn=})")
 
         self._db_conn = db_conn
 
-        self._logger.info("End   'Categories.__init__' returns - None")
+        self._logger.info("End   'Accounts.__init__' returns - None")
 
     # ------------------------------------------------------------------------------------------------------------------
     def __str__(self):
