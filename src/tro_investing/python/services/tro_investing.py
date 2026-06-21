@@ -40,7 +40,9 @@ class TroInvesting(StdApp):
         report_path = Path(report_file)
         self._config["report_path"] = report_path
 
-        self._output_report = StdReport(self._config["app_name"], self._config["version"], self._config["report_path"])
+        self._output_report = None 
+        #  self._output_report = StdReport(self._config["app_name"],
+        #      self._config["version"], self._config["report_path"])
 
         self._max_return_code = 0
 
@@ -49,10 +51,10 @@ class TroInvesting(StdApp):
     #  -----------------------------------------------------------------------------
     def __del__(self):
 
-        self._output_report.print_footer(self._max_return_code)
+        #  self._output_report.print_footer(self._max_return_code)
 
-        if hasattr(self, '_output_report'):
-            del self._output_report
+        #  if hasattr(self, '_output_report'):
+        #      del self._output_report
         return
 
     # -------------------------------------------------------------------------------
@@ -80,8 +82,8 @@ class TroInvesting(StdApp):
     #  -----------------------------------------------------------------------------
     @function_logger
     def run(self):
-        run_time = datetime.now().strftime("%H:%M")
-        self.report(f"run time : {run_time} - processing files\n")
+        #  run_time = datetime.now().strftime("%H:%M")
+        #  self.report(f"run time : {run_time} - processing files\n")
 
         #  every 15 minutes for the next 24 hours process the stagged files
         #  stop_time = datetime.timedelta(hours=24)
@@ -96,41 +98,48 @@ class TroInvesting(StdApp):
             n = idle_seconds()  # seconds until the next job is due
 
             if n is None:  # no more jobs to run
-                self.report("No more jobs to run. Exiting.\n")
+                self._logger.info("No more jobs to run. Exiting.\n")
                 break
 
             if n > 0:
                 sleep(n)  # sleep until the next job is due
-                self.report("Running pending jobs...\n")
+                #  self.report("Running pending jobs...\n")
                 run_pending()
 
         return 0
 
-    #  -----------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------
     def report(self, msg):
         self._output_report.report(msg)
 
-    #  -----------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------
     @function_logger
     def process_stagged_files(self):
         file_list = self.filter_list()
-        run_time = datetime.now().strftime("%H:%M")
 
-        if len(file_list) > 0:
-            for file in file_list:
-                self.report(f"    processing file {file}\n")
-                invest_trans_processor = InvestingTransactionsProcessor(self._db_conn, self._output_report, file)
-                rc = invest_trans_processor.process_file()
-
-                if rc > self._max_return_code:
-                    self._max_return_code = rc
-
-                new_file_path = f"{file}.bkp"
-                file.rename(new_file_path)
+        if len(file_list) == 0:
+            run_time = datetime.now().strftime("%H:%M")
+            self._logger.info(f"run time : {run_time} - no files to process\n")
+            rc = 0
         else:
-            self.report(f"run time : {run_time} - no files to process\n")
+            self._output_report = StdReport(self._config["app_name"],
+                self._config["version"],
+                self._config["report_path"])
 
-        return None
+            file = file_list[0]
+            self._output_report.report(f"    processing file {file}\n")
+            invest_trans_processor = InvestingTransactionsProcessor(self._db_conn, self._output_report, file)
+            rc = invest_trans_processor.process_file()
+
+            if rc > self._max_return_code:
+                self._max_return_code = rc
+
+            new_file_path = f"{file}.bkp"
+            file.rename(new_file_path)
+
+            self._output_report.print_footer(rc)
+
+        return rc
 
     #-----------------------------------------------------------------------------
     #  The files to process are expected to be in the stage directory,

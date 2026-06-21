@@ -21,12 +21,9 @@ class Category:
 class Categories:
     # ------------------------------------------------------------------------------------------------------------------
     def __init__(self, db_conn):
-        self._logger = getLogger()
-        self._logger.info(f"Begin 'Categories.__init__' arguments - ({db_conn=})")
-
         self._db_conn = db_conn
 
-        self._logger.info("End   'Categories.__init__' returns - None")
+        self._logger = getLogger()
 
     # ------------------------------------------------------------------------------------------------------------------
     def __str__(self):
@@ -128,6 +125,23 @@ class Categories:
             row_count = cursor.fetchone()[0]
 
         return row_count
+
+    # ----------------------------------------------------------------------
+    @function_logger
+    def check_dataframe_for_new_categories(self, dataframe):
+        new_category_names = []
+        for category_name in dataframe["Category"].unique():
+
+            #  Check if the category exists in the database
+            category_id = self.get_id(category_name)
+
+            #  If the category doesn't exist, insert it
+            if category_id is None:
+                category_id = self.insert(category_name)
+                new_category_names.append(category_name)
+
+        return new_category_names
+
 
 """
     # ------------------------------------------------------------------------------------------------------------------

@@ -76,6 +76,10 @@ class InvestingTransactionsProcessor:
 
         #  Check for any new categories and add them to the database
         new_category_names = self._categories.check_dataframe_for_new_categories(df)
+        if new_category_names.__len__() > 0:
+            self.report("\n\n    The following new categories have been added:\n")
+            for category_name in new_category_names:
+                self.report(f"      {category_name}\n")  
 
         #  Load the transactions from the dataframe
         rc = self.load_transactions_from_dataframe(df)
@@ -84,7 +88,7 @@ class InvestingTransactionsProcessor:
         return rc
 
     # ----------------------------------------------------------------------
-    @function_logger
+    #  @function_logger
     def massage_data(self, df):
         """
         Use pandas to clean the data before processing
@@ -118,7 +122,6 @@ class InvestingTransactionsProcessor:
         df.fillna({"Commission": 0}, inplace=True)
         df.fillna({"Cash": 0}, inplace=True)
 
-
         return df   
 
     # ----------------------------------------------------------------------
@@ -128,6 +131,12 @@ class InvestingTransactionsProcessor:
         Read each row of the dataframe and turn it into an investment transaction record.
         """
         self.report("\n\n    The following transactions have been added:\n")
+        self.report(("=" * 132) + "\n")
+        self.report((" " * 8) + "Account")
+        self.report((" " * 20) + "Date")
+        self.report((" " * 20) + "Category")
+        self.report((" " * 20) + "Amount")
+        self.report("\n")
 
         for row in df.itertuples():
             #  Skip balance rows since they don't have a valid date and are not transactions.
@@ -169,6 +178,7 @@ class InvestingTransactionsProcessor:
                 f"      {row.Account.ljust(35)} {nt.transaction_date.strftime('%m/%d/%y').ljust(10)} \
                      {str(row.Category).ljust(35)} {amount_string} \n"
             )
+        self._report.print_footer(0)    
 
         return 0
 

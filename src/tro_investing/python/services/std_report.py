@@ -68,13 +68,13 @@ class StdReport:
     #  -----------------------------------------------------------------------------
     @function_logger
     def print_footer(self, return_code):
-        #  end_date = datetime.today().strftime("%m/%d/%y")
+        end_date = datetime.today().strftime("%m/%d/%y")
 
         self.report(("-" * 132) + "\n")
-        #  if return_code == 0:
-        #  self.report(f"Finished successfully at {end_date}\n")
-        #  else:
-        #  self.report(f"FAILED! With return code {return_code} at {end_date}\n")
+        if return_code == 0:
+            self.report(f"Finished successfully at {end_date}\n")
+        else:
+            self.report(f"FAILED! With return code {return_code} at {end_date}\n")
 
         self.report(("=" * 132) + "\n")
 

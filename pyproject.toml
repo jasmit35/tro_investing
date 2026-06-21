@@ -1,6 +1,6 @@
 [project]
 name = "tro_investing"
-version = "v26.1.0.0.1"
+version = "v26.1.0.0.2"
 description = "Load investing transactions into the TRO database"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"

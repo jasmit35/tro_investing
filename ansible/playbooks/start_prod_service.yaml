@@ -8,7 +8,7 @@
     - name: Start the TRO Investing service on the prod swarm cluster.
       community.docker.docker_swarm_service:
         name: tro_investing 
-        image: jasmit/tro_investing:v26.1.0.0.1
+        image: jasmit/tro_investing:v26.1.0.0.2
         env:
           ENVIRONMENT: "prod"
         debug: false 
