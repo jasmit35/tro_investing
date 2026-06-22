@@ -13,11 +13,6 @@ from python.services.std_logging import function_logger
 @function_logger
 def set_default_values(app):
 
-    environment = environ.get('ENVIRONMENT', 'undefined')
-    if environment not in ["devl", "test", "prod"]:
-        raise ValueError(f"Invalid environment - {environment}")
-    app._config["environment"] = environment
-
     #  The default for the report file is expected to be in a 'reports' directory under the current working directory.
     report_file = Path.cwd() / "reports"
     report_path = Path(report_file)

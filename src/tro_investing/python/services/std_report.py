@@ -32,14 +32,7 @@ class StdReport:
 
     #   -----------------------------------------------------------------------------
     def __del__(self):
-
-        #  self.print_footer(0)
-
-        #  if hasattr(self, '_file'):
-        #      self._file.close()
-
-        #  self._logger.info("End   'StdReport.__del__      ' returns - None")
-        return
+        pass
 
     #  -----------------------------------------------------------------------------
     def report(self, output_string):
@@ -68,7 +61,7 @@ class StdReport:
     #  -----------------------------------------------------------------------------
     @function_logger
     def print_footer(self, return_code):
-        end_date = datetime.today().strftime("%m/%d/%y")
+        end_date = datetime.today().strftime("%m/%d/%y %H:%M:%S %z")
 
         self.report(("-" * 132) + "\n")
         if return_code == 0:
@@ -83,25 +76,3 @@ class StdReport:
         self._file.flush()
         with open(self._rpt_file_path) as contents:
             return contents.read()
-
-"""
-    #  -----------------------------------------------------------------------------
-    @function_logger
-    def set_rpt_file_path(self, rpt_file_dir="reports"):
-        p = Path(rpt_file_dir)
-        p = p.absolute()
-        if not p.exists():
-            self._logger.info(f"Report directory {p} does not exist.\n")
-            return None
-
-        if not p.is_dir():
-            self._logger.info(f"Report directory {p} is not a directory.\n")
-            return None
-
-        #     today = datetime.datetime.now().strftime("%m_%d_%y_%H_%M")
-        today = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M")
-        file_name = f"{self._app_name}_{today}.rpt"
-        file_path = p / (file_name)
-
-        return file_path
-"""

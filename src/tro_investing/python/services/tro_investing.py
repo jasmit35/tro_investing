@@ -41,9 +41,6 @@ class TroInvesting(StdApp):
         self._config["report_path"] = report_path
 
         self._output_report = None 
-        #  self._output_report = StdReport(self._config["app_name"],
-        #      self._config["version"], self._config["report_path"])
-
         self._max_return_code = 0
 
         return
@@ -70,6 +67,9 @@ class TroInvesting(StdApp):
         set_default_values(self)
         set_config_file_values(self)
         set_command_line_values(self)
+
+        #  Set the log level based on the value in the configuration.
+        self._logger.setLevel(self._log_level)
 
         try:
             self._db_conn = get_database_connection(self._config["environment"])
@@ -159,28 +159,17 @@ class TroInvesting(StdApp):
     #  -----------------------------------------------------------------------------
     @function_logger
     def close(self):
+        pass
 
-        self._output_report.print_footer(self._max_return_code)
+
+#          self._output_report.print_footer(self._max_return_code)
 #          self._output_report = None
 
-        return
+#          return
 #
 #          #  final_return_code = this_app._max_return_code
 #          #  this_app = None  # clean up
 #          #  exit(final_return_code)
-#
-#      #  -----------------------------------------------------------------------------
-#      def fred(self):
-#
-#          self._max_return_code = 0
-#
-#        environment = "devl"
-#          self._yaml_cfg = self.load_yaml_cfg(environment)
-#          self._db_conn = get_database_connection(environment, self._yaml_cfg)
-#          self._stage_dir_path = self.set_stage_dir_path()
-#
-#  witch to the application user and set up the venv for the application.
-#
 #
 #      @function_logger
 #      def set_stage_dir_path(self):

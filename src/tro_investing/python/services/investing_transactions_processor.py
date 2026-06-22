@@ -102,7 +102,7 @@ class InvestingTransactionsProcessor:
 
         #  Assign the desired column names
         df.columns = ['Date', 'Account', 'Action', 'Symbol', 'Security', 'Category', 'Memo',
-            'Price', 'Shares', 'Commission', 'Cash', 'Invested']
+            'Price', 'Shares', 'Commission', 'Cash', 'Invested', 'cash+invested']
 
         #  Drop the rows that don't have an action since they are not transactions.
         df.dropna(subset=['Action'], inplace=True)
