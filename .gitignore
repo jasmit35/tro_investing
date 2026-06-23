@@ -1,7 +1,11 @@
-#
+#  Allways  ----------
+.env
+.env.local
 .venv
-#
+*.pem
+*.key
+secrets/
+#----------------------
 *.rpt
-#
 */*.rpt
-#
+

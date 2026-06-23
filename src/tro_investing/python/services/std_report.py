@@ -3,43 +3,36 @@ std_report.py
 """
 
 from datetime import datetime
-from logging import getLogger
 from pathlib import Path
-
-from python.services.std_logging import function_logger
 
 
 class StdReport:
     #  -----------------------------------------------------------------------------
     def __init__(self, app_name = "Hello World", version="v0.0.0.0", rpt_dir="reports"):
-        self._logger = getLogger()
-        self._logger.info(f"Begin 'StdReport.__init__      ' arguments - ({app_name=}, {version=}, {rpt_dir=})")
-
         self._app_name = app_name
         self._version = version
+        self._rpt_dir = rpt_dir
 
-        self._rpt_file_path = Path(rpt_dir) / f"{self._app_name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}.rpt"
-        self._file = open(self._rpt_file_path, "w")  # noqa: SIM115
-
-        self.print_header()
-        self._logger.info("End   'StdReport.__init__      ' returns - None")
+        rpt_file_path = Path(self._rpt_dir) / f"{self._app_name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}.rpt"
+        self._file = open(rpt_file_path, "w")   # noqa: SIM115
 
     #-----------------------------------------------------------------------------------------------
     def __str__(self):
         return "StdReport"
 
-    __repr__ = __str__
+    #-----------------------------------------------------------------------------------------------
+    def __repr__(self):
+        return "StdReport"
 
     #   -----------------------------------------------------------------------------
     def __del__(self):
-        pass
+        self._file.close()
 
     #  -----------------------------------------------------------------------------
     def report(self, output_string):
         self._file.write(output_string)
 
     #  -----------------------------------------------------------------------------
-    @function_logger
     def print_header(self):
         start_date = datetime.today().strftime("%m/%d/%y")
         start_time = datetime.today().strftime("%H:%M:%S %z")
@@ -59,7 +52,6 @@ class StdReport:
         self._file.write(("-" * 132) + "\n")
 
     #  -----------------------------------------------------------------------------
-    @function_logger
     def print_footer(self, return_code):
         end_date = datetime.today().strftime("%m/%d/%y %H:%M:%S %z")
 

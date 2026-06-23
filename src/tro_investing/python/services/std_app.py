@@ -20,58 +20,67 @@ std_app.py
      default values and the config file values.
 ---------------------------------------------------------------------------------------------------------------------
 """
+from datetime import datetime
+from os import environ
+
 from python.services.std_logging import StdLogging
+
 
 #=============================================================================
 class StdApp:
-    #  -----------------------------------------------------------------------------
+    #  The following are expected attributes of the app that inherits from StdApp.
+    #  They are set in the __init__ method.
+    _app_name = None 
+    _environment = None
+    _logger = None
+    _max_return_code = None
+    _version = None
+
+    #-----------------------------------------------------------------------------
     def __init__(self, app_name="Hello World", version="v0.0.0") -> None:
-        self._app_name = app_name
-        self._version = version
-
-        self._environment = None 
-        self._logger = None 
-
-    #---------------------------------------------------------------------------------------------------------------------
-
-    def __str__(self) -> str:
-        return self._app_name 
-
-    def __repr__(self) -> str:
-        return self._app_name 
-
-    #---------------------------------------------------------------------------------------------------------------------
-    def set_default_values(self):
         #  The default for the environment is expected to be set in the environment variable ENVIRONMENT.
         #  Numerious parameters depend on it's value so set it and validate it before setting the other parameters.
-        app._environment = environ.get('ENVIRONMENT', 'undefined')
-        if app._environment not in ["devl", "test", "prod"]:
-            raise ValueError(f"Invalid environment - {environment}")
+        self._environment = environ.get('ENVIRONMENT', 'undefined')
+        if self._environment not in ["devl", "test", "prod"]:
+            raise ValueError(f"Invalid environment - {self._environment}")
 
-jasmit
-    #  Set the default log level.
-        self._logger = StdLogging(f"logs/{self._app_name}.log")
-    switch = {
-        case "devl":
-            app._log_level = "DEBUG"
-        case "test":
-            app._log_level = "INFO"
-        case "prod":
-            app._log_level = "WARNING"
-        case _:
-            raise ValueError(f"Invalid environment - {environment}")
+        self._app_name = app_name
+        
+        #  Set up the default logging for the app based on the environment.
+        this_day = datetime.today().strftime("%y_%m_%d")
+        match (self._environment): 
+            case "devl":        
+                self._logger = StdLogging("DEBUG", f"logs/{self._app_name}_{this_day}.log")
+            case "test":
+                self._logger = StdLogging("INFO", f"logs/{self._app_name}_{this_day}.log")
+            case "prod":
+                self._logger = StdLogging("WARNING", f"logs/{self._app_name}_{this_day}.log")
+            case _:
+                raise ValueError(f"Invalid environment - {self._environment}")
 
+        self._max_return_code = 0
+        
+        self._version = version
 
+    #-----------------------------------------------------------------------------
+    # Dunder methods.
 
-    app._config["log_level"] = "INFO"
+    def __str__(self) -> str:
+        return f"{self._app_name} - {self._version} - {self._environment}" 
 
-        return
+    def __repr__(self) -> str:
+        return f"{self._app_name} - {self._version} - {self._environment}" 
 
-    # ---------------------------------------------------------------------------------------------------------------------
+    #---------------------------------------------------------------------------------------------------------------------
+    #  The following methods are expected to be overridden by the app that inherits from StdApp.
+
+    def set_default_values(self):
+        pass
+
     def set_config_file_values(self):
-        return
+        pass 
 
-    # ---------------------------------------------------------------------------------------------------------------------
     def set_command_line_values(self):
-        return
+        pass
 
+    #---------------------------------------------------------------------------------------------------------------------

@@ -8,11 +8,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from time import sleep
 
-from python.config import (
-    set_command_line_values,
-    set_config_file_values,
-    set_default_values,
-)
 from python.services.investing_transactions_processor import InvestingTransactionsProcessor
 from python.services.std_app import StdApp
 from python.services.std_dbconn import get_database_connection
@@ -25,61 +20,62 @@ from schedule import every, idle_seconds, run_pending
 # =============================================================================
 class TroInvesting(StdApp):
 
-    #  -----------------------------------------------------------------------------
+    _db_conn = None
+    _report_dir_path = None
+    _stage_dir_path = None
+
+    #-----------------------------------------------------------------------------
+    #  Dunder methods
+
     def __init__(self):
         super().__init__("tro_investing", get_version())
 
-        self._config = {}
-        self._config["app_name"] = self._app_name
-        self._config["version"] = self._version
+    def __repr__(self):
+        return "TroInvesting"
 
-        #  The default for the report file is expected to be in a 'reports' 
-        #  directory under the current working directory.
-        current_directory = Path.cwd()
-        report_file = current_directory / "reports"
-        report_path = Path(report_file)
-        self._config["report_path"] = report_path
-
-        self._output_report = None 
-        self._max_return_code = 0
-
-        return
-
-    #  -----------------------------------------------------------------------------
-    def __del__(self):
-
-        #  self._output_report.print_footer(self._max_return_code)
-
-        #  if hasattr(self, '_output_report'):
-        #      del self._output_report
-        return
-
-    # -------------------------------------------------------------------------------
     def __str__(self):
         return "TroInvesting"
 
-    __repr__ = __str__
+    #-------------------------------------------------------------------------------
+    def set_default_values(self):
+        super().set_default_values()    
+
+        self._db_conn = get_database_connection(self._environment)
+        self._report_dir_path = Path.cwd() / "reports"
+        self._stage_dir_path = Path.cwd() / "stage"
+
+    #-------------------------------------------------------------------------------
+    def set_config_file_values(self):
+        super().set_config_file_values()
+
+        #  The config file is expected to be in the etc directory under the
+        #  current working directory and should be named <app_name>.cfg
+        config_directory = Path.cwd() / "etc"
+        config_file = config_directory / f"{self._app_name}.cfg"
+        self._logger.debug(f"config file is {config_file}\n")
+
+        #  If the config file does not exist or is not a file, log a warning and return.
+        #  The app will use the default values in this case.
+        if not config_file.exists():
+            self._logger.warning(f"Configuration file {config_file} does not exist. Using defaults.\n")
+            return
+
+        if not config_file.is_file():
+            self._logger.warning(f"Configuration file {config_file} is not a file. Using defaults.\n")
+            return
+
+        #  Load the config file and update the app's config with the values from the file
+        #  The config file is expected to be a yaml file with a top level key for each environment (devl, test, prod)
+        #  The values for each environment are expected to be a dictionary of key value pairs.
+        # more_config = load_yaml_config_file(config_file, self._config["environment"])
+        # self._config.update(more_config)
+
+    #-------------------------------------------------------------------------------
+    def set_command_line_values(self):
+        super().set_command_line_values()   
+
 
     #-----------------------------------------------------------------------------
-    #  Configure the app by setting the defaults, reading the config file and processing the command line parameters.
-    @function_logger
-    def configure(self):
-        set_default_values(self)
-        set_config_file_values(self)
-        set_command_line_values(self)
-
-        #  Set the log level based on the value in the configuration.
-        self._logger.setLevel(self._log_level)
-
-        try:
-            self._db_conn = get_database_connection(self._config["environment"])
-        except Exception as e:
-            self.report(f"Error occurred while connecting to database: {e}\n")
-            raise e
-
-        return
-
-    #  -----------------------------------------------------------------------------
     @function_logger
     def run(self):
         #  run_time = datetime.now().strftime("%H:%M")
@@ -91,9 +87,8 @@ class TroInvesting(StdApp):
         stop_time = timedelta(minutes=15)
         #  stop_time = timedelta(hours=1)
         #  stop_time = timedelta(hours=24)
-        every(5).minutes.until(stop_time).do(self.process_stagged_files)
-        #  every(60).minutes.until(stop_time).do(self.process_stagged_files)
-
+        every(5).minutes.until(stop_time).do(self.process_stage_dir)
+    
         while True:
             n = idle_seconds()  # seconds until the next job is due
 
@@ -109,35 +104,35 @@ class TroInvesting(StdApp):
         return 0
 
     #-----------------------------------------------------------------------------
-    def report(self, msg):
-        self._output_report.report(msg)
+#    def report(self, msg):
+#        self._output_report.report(msg)
 
     #-----------------------------------------------------------------------------
     @function_logger
-    def process_stagged_files(self):
-        file_list = self.filter_list()
+    def process_stage_dir(self):
+        file_list = self.search_for_investing_files()
 
         if len(file_list) == 0:
             run_time = datetime.now().strftime("%H:%M")
             self._logger.info(f"run time : {run_time} - no files to process\n")
             rc = 0
         else:
-            self._output_report = StdReport(self._config["app_name"],
-                self._config["version"],
-                self._config["report_path"])
-
             file = file_list[0]
-            self._output_report.report(f"    processing file {file}\n")
-            invest_trans_processor = InvestingTransactionsProcessor(self._db_conn, self._output_report, file)
+
+            output_report = StdReport(self._app_name, self._version, self._report_dir_path)
+            output_report.print_header()
+            output_report.report(f"    processing file {file}\n")
+
+            invest_trans_processor = InvestingTransactionsProcessor(self._db_conn, output_report, file)
             rc = invest_trans_processor.process_file()
+
+            output_report.print_footer(rc)
 
             if rc > self._max_return_code:
                 self._max_return_code = rc
 
             new_file_path = f"{file}.bkp"
             file.rename(new_file_path)
-
-            self._output_report.print_footer(rc)
 
         return rc
 
@@ -146,20 +141,20 @@ class TroInvesting(StdApp):
     #  and have a name that starts with "invest" and have a suffix of ".xlsx".
     #-----------------------------------------------------------------------------
     @function_logger
-    def filter_list(self):
+    def search_for_investing_files(self):
         file_list = []
 
-        for stage_file in self._config["stage_dir_path"].iterdir():
+        for stage_file in self._stage_dir_path.iterdir():
 
             if stage_file.name[:6] == "invest" and  stage_file.suffix == ".xlsx":
                 file_list.append(stage_file)
 
         return file_list
 
-    #  -----------------------------------------------------------------------------
-    @function_logger
-    def close(self):
-        pass
+#    #  -----------------------------------------------------------------------------
+#    @function_logger
+#    def close(self):
+#        pass
 
 
 #          self._output_report.print_footer(self._max_return_code)
@@ -213,3 +208,47 @@ class TroInvesting(StdApp):
 #          self._stage_dir_path = self.set_stage_dir_path()
 #  """
 #
+"""
+    #-----------------------------------------------------------------------------
+    #  Configure the app by setting the defaults, reading the config file and processing the command line parameters.
+    @function_logger
+    def configure(self):
+        set_default_values(self)
+        set_config_file_values(self)
+        set_command_line_values(self)
+
+        #  Set the log level based on the value in the configuration.
+        self._logger.setLevel(self._log_level)
+
+        try:
+            self._db_conn = get_database_connection(self._config["environment"])
+        except Exception as e:
+            self.report(f"Error occurred while connecting to database: {e}\n")
+            raise e
+
+        return
+"""
+"""
+    #  -----------------------------------------------------------------------------
+    def __del__(self):
+
+        #  self._output_report.print_footer(self._max_return_code)
+
+        #  if hasattr(self, '_output_report'):
+        #      del self._output_report
+        pass
+"""
+"""
+        #  The stage directory is expected to be in the current working directory and should be named "stage".
+        #  The name of the stage directory can be overridden by setting the "stage_dir" parameter in the config file.
+        cfg_stage_dir = self._config.get("stage_dir")
+        if cfg_stage_dir:
+            self._stage_dir_path = Path(cfg_stage_dir)
+        else:
+            self._stage_dir_path = Path.cwd() / "stage"
+
+        if not self._stage_dir_path.exists():
+            raise ValueError(f"Stage directory {self._stage_dir_path} does not exist.")
+        if not self._stage_dir_path.is_dir():
+            raise ValueError(f"Stage directory {self._stage_dir_path} is not a directory.") 
+"""

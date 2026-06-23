@@ -13,16 +13,16 @@ The function_logger decorator can be used to log the start and end
 of a function, along with its arguments and return value.
 """
 
-from logging import DEBUG, basicConfig, getLogger, shutdown
+from logging import basicConfig, getLogger, shutdown
 
 
 class StdLogging:
     #     _std_logger = None
 
     #----------------------------------------------------------------------------------------------------
-    def __init__(self, log_name):
+    def __init__(self, log_level, log_name):
         basicConfig(
-            level=DEBUG,
+            level=log_level,
             filename=f"{log_name}",
             datefmt="%Y-%m-%d %H:%M:%S",
             format="%(asctime)s - %(levelname)s - %(message)s",

@@ -34,7 +34,7 @@ class InvestingTransactionsProcessor:
 
         self._logger.info("End   'InvestingTransactionsProcessor.__init__()")
 
-    # -------------------------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------------------------------------------------------------------------
     def __str__(self):
         return f"InvestingTransactionsProcessor({self._file_path=})"
 
@@ -83,7 +83,7 @@ class InvestingTransactionsProcessor:
 
         #  Load the transactions from the dataframe
         rc = self.load_transactions_from_dataframe(df)
-        self._report.print_footer(rc)
+        #  self._report.print_footer(rc)
 
         return rc
 
