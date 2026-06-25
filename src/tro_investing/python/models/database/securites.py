@@ -1,65 +1,77 @@
 """
 securities.py
+
 Model for managing security information in the database.
 """
 from dataclasses import dataclass
-from logging import getLogger
 
 
 @dataclass
 class Security:
-    security_id: int = None
-    security_name: str = None
-    security_symbol: str = None 
-    security_type: str = "Unknown"
-    security_class: str = None 
+    _security_id: int = None
+    _security_name: str = None
+    _security_symbol: str = None
+    _security_type: str = None
+    _security_class: str = None
 
     #----------------------------------------------------------------------
 class Securities:
     #------------------------------------------------------------------------------------------------------------------
     def __init__(self, db_conn):
-        self._logger = getLogger()
-        self._logger.info(f"Begin 'Securities.__init__' arguments - ({db_conn=})") 
-
         self._db_conn = db_conn
 
-        self._logger.info("End   'Securities.__init__' returns - None")
-    
+
     #----------------------------------------------------------------------
-    def get_id(self, security_symbol, security_name=None, insert_missing=False):
-        sql = "select security_id from tro.securities where security_symbol = %s"
+    def get_by_name(self, security_name=None, insert_missing=False):
+        sql = "select * from tro.securities where security_name = %s"
 
         with self._db_conn.cursor() as cursor:
-            cursor.execute(sql, (str(security_symbol),))
+            cursor.execute(sql, (security_name,))
             results = cursor.fetchone()
 
-        security_id = None if results is None else results[0]
+            the_security = None if results is None else Security(
+            _security_id=results[0],
+            _security_name=results[1],
+            _security_symbol=results[2],
+            _security_type=results[3],
+            _security_class=results[4]
+        )
 
-        if security_id is None and security_name is not None:
-            sql = "select security_id from tro.securities where security_name = %s"
+        if the_security is None and insert_missing is True:
+            the_security = Security()
+            the_security._security_name = security_name
 
-            with self._db_conn.cursor() as cursor:
-                cursor.execute(sql, (str(security_name),))
-                results = cursor.fetchone()
+            the_security = self.insert(the_security)
 
-            security_id = None if results is None else results[0]
-
-        if security_id is None and insert_missing is True:
-            security_id = self.insert(security_name=security_name, security_symbol=security_symbol)
-
-        return security_id
+        return the_security 
 
 
     # ----------------------------------------------------------------------
-    def insert(self, security_name="Unknown", security_symbol="unknown"):
-        sql = """
-            insert into tro.securities (security_name, security_symbol)
-                values (%s, %s)
-            returning security_id
-        """
+    def insert(self, security):
+        sql = "insert into tro.securities values (%s, %s, %s, %s, %s) returning security_id"
 
         with self._db_conn.cursor() as cursor:
-            cursor.execute(sql, (security_name, security_symbol),)
-            security_id = cursor.fetchone()[0]
+            cursor.execute(sql, (
+                0,
+                security._security_name,
+                security._security_symbol,
+                security._security_type,
+                security._security_class),
+                )
+            security._security_id = cursor.fetchone()[0]
 
-        return security_id
+        return security
+
+    # ----------------------------------------------------------------------
+    def check_dataframe_for_new_securities(self, dataframe):
+        new_security_names = []
+
+        for security_name in dataframe["Security"].unique():
+
+            #  insure the security exists in the database
+            security = self.get_by_name(security_name)
+            if security is None:
+                new_security_names.append(security_name)    
+                self.insert(Security(_security_name=security_name)) 
+
+        return new_security_names

@@ -35,15 +35,13 @@ class InvestingTransactionsProcessor:
         self._logger.info("End   'InvestingTransactionsProcessor.__init__()")
 
     #--------------------------------------------------------------------------------------------------------------------------------------------
+    #  Dunder methods
+    
     def __str__(self):
         return f"InvestingTransactionsProcessor({self._file_path=})"
 
-    __repr__ = __str__
-
-    # --------------------------------------------------------------------------------------------------
-    #  Short cut to report a single message
-    def report(self, msg):
-        self._report.report(msg)
+    def __repr__(self):
+        return f"InvestingTransactionsProcessor({self._file_path=})"
 
     # ----------------------------------------------------------------------
     @function_logger
@@ -64,7 +62,7 @@ class InvestingTransactionsProcessor:
         df = self.massage_data(df)
 
         #  Save the cleaned data to a new Excel file for reference
-        cleaned_file_path = Path(self._file_path).with_name(self._file_path.stem + "_cleaned")
+        cleaned_file_path = Path(self._file_path.parent) / f"cleaned_{self._file_path.stem}.{self._file_path.suffix}"
         df.to_excel(cleaned_file_path, index=False) 
 
         #  Check for any new accounts and add them to the database
@@ -81,14 +79,26 @@ class InvestingTransactionsProcessor:
             for category_name in new_category_names:
                 self.report(f"      {category_name}\n")  
 
+        #  Check for any new securities and add them to the database
+        new_security_names = self._securities.check_dataframe_for_new_securities(df)
+        if new_security_names.__len__() > 0:
+            self.report("\n\n    The following new securities have been added:\n")
+            for security_name in new_security_names:
+                self.report(f"      {security_name}\n")  
+
         #  Load the transactions from the dataframe
         rc = self.load_transactions_from_dataframe(df)
         #  self._report.print_footer(rc)
 
         return rc
 
-    # ----------------------------------------------------------------------
-    #  @function_logger
+    # --------------------------------------------------------------------------------------------------
+    #  Short cut to report a single message
+    def report(self, msg):
+        self._report.report(msg)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    @function_logger
     def massage_data(self, df):
         """
         Use pandas to clean the data before processing
@@ -101,7 +111,7 @@ class InvestingTransactionsProcessor:
         df = df.dropna(axis=1, how="all")
 
         #  Assign the desired column names
-        df.columns = ['Date', 'Account', 'Action', 'Symbol', 'Security', 'Category', 'Memo',
+        df.columns = ['Date', 'Account', 'Action', 'Security', 'Symbol', 'Category', 'Memo',
             'Price', 'Shares', 'Commission', 'Cash', 'Invested', 'cash+invested']
 
         #  Drop the rows that don't have an action since they are not transactions.
@@ -130,10 +140,11 @@ class InvestingTransactionsProcessor:
         """
         Read each row of the dataframe and turn it into an investment transaction record.
         """
-        self.report("\n\n    The following transactions have been added:\n")
         self.report(("=" * 132) + "\n")
+        self.report("\n\n    The following transactions have been added:\n")
         self.report((" " * 8) + "Account")
-        self.report((" " * 20) + "Date")
+        self.report((" " * 29) + "Date")
+        self.report((" " * 20) + "Security")
         self.report((" " * 20) + "Category")
         self.report((" " * 20) + "Amount")
         self.report("\n")
@@ -152,7 +163,7 @@ class InvestingTransactionsProcessor:
 
             #  Get the values for the foreign keys
             nt.account_fk  = self._accounts.get_id(row.Account, True)
-            nt.security_fk = self._securities.get_id(row.Symbol, row.Security, True)
+            nt.security_fk = self._securities.get_by_name(row.Security, insert_missing=True)._security_id
             nt.category_fk = self._categories.get_id(row.Category, True)
 
             #  Set the remaining values for the transaction record.
@@ -175,11 +186,13 @@ class InvestingTransactionsProcessor:
             #  Report the transaction that was just added.
             amount_string = f"{nt.amount:10.2f}"
             self.report(
-                f"      {row.Account.ljust(35)} {nt.transaction_date.strftime('%m/%d/%y').ljust(10)} \
-                     {str(row.Category).ljust(35)} {amount_string} \n"
+                f"{row.Account.ljust(35)} \
+                {nt.transaction_date.strftime('%m/%d/%y').ljust(10)} \
+                {row.Security.ljust(20)} \
+                {str(row.Category).ljust(35)} \
+                {amount_string} \
+                \n"
             )
-        self._report.print_footer(0)    
-
         return 0
 
     # ----------------------------------------------------------------------
