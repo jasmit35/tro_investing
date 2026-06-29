@@ -142,8 +142,8 @@ class InvestingTransactionsProcessor:
         """
         self.report(("=" * 132) + "\n")
         self.report("\n\n    The following transactions have been added:\n")
+        self.report((" " * 2) + "Date")
         self.report((" " * 8) + "Account")
-        self.report((" " * 29) + "Date")
         self.report((" " * 20) + "Security")
         self.report((" " * 20) + "Category")
         self.report((" " * 20) + "Amount")
@@ -186,8 +186,8 @@ class InvestingTransactionsProcessor:
             #  Report the transaction that was just added.
             amount_string = f"{nt.amount:10.2f}"
             self.report(
-                f"{row.Account.ljust(35)} \
-                {nt.transaction_date.strftime('%m/%d/%y').ljust(10)} \
+                f"{nt.transaction_date.strftime('%m/%d/%y').ljust(10)} \
+                {row.Account.ljust(35)} \
                 {row.Security.ljust(20)} \
                 {str(row.Category).ljust(35)} \
                 {amount_string} \

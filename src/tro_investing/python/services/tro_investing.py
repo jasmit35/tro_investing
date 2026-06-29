@@ -22,14 +22,18 @@ from schedule import every, idle_seconds, run_pending
 class TroInvesting(StdApp):
 
     _db_conn = None
-    _report_dir_path = None
-    _stage_dir_path = None
+    _report_dir_path: Path 
+    _stage_dir_path: Path 
 
     #-------------------------------------------------------------------------------------------------------------------------------
     #  Dunder methods
 
     def __init__(self):
         super().__init__("tro_investing", get_version())
+
+        self._db_conn = get_database_connection(self._environment)
+        self._report_dir_path = Path.cwd() / "reports"
+        self._stage_dir_path = Path.cwd() / "stage"
 
     def __repr__(self):
         return "TroInvesting"
@@ -39,21 +43,20 @@ class TroInvesting(StdApp):
 
     #-------------------------------------------------------------------------------------------------------------------------------
     @function_logger
-    def load_config_file(self, config_file_path, environment):
+    def load_config_file(self, config_file_path):
 
         class Settings(BaseSettings):
-            def __init__(self, environment: str):
-                super().__init__()
-                self._environment = environment
+                environment: str
 
-            def is_production(self) -> bool:
-                return self._environment == "prod"
+                class Config:
+                    env_file = config_file_path
+                    env_file_encoding = "utf-8" 
 
-        settings = Settings(environment)
+        settings = Settings()
         
-        self._db_conn = get_database_connection(self._environment)
-        self._report_dir_path = Path.cwd() / "reports"
-        self._stage_dir_path = Path.cwd() / "stage"
+        return settings
+        
+
 
     #-------------------------------------------------------------------------------------------------------------------------------
     @function_logger
@@ -77,8 +80,9 @@ class TroInvesting(StdApp):
             return
 
         #  Load the config file and update the app's config with the values from the file
-        more_config = self.load_config_file(config_file_path, self._environment)
-        # self._config.update(more_config)
+        more_config = self.load_config_file(config_file_path)
+
+        self._logger.debug(f"more_config is {more_config}\n")
 
     #-------------------------------------------------------------------------------------------------------------------------------
     @function_logger
