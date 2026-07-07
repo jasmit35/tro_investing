@@ -9,7 +9,7 @@ from python.services.std_logging import function_logger
 
 #-----------------------------------------------------------------------------
 def configure_app(app):
-    app.set_default_values()
+    #  app.set_default_values()
     app.set_config_file_values()
     app.set_command_line_values()
 

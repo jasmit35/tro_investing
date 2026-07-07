@@ -48,19 +48,18 @@ class Securities:
 
     # ----------------------------------------------------------------------
     def insert(self, security):
-        sql = "insert into tro.securities values (%s, %s, %s, %s, %s) returning security_id"
+        sql = "insert into tro.securities values (DEFAULT, %s, %s, %s, %s) returning security_id"
 
         with self._db_conn.cursor() as cursor:
             cursor.execute(sql, (
-                0,
                 security._security_name,
                 security._security_symbol,
                 security._security_type,
                 security._security_class),
                 )
-            security._security_id = cursor.fetchone()[0]
+            security_id = cursor.fetchone()[0]
 
-        return security
+        return security_id
 
     # ----------------------------------------------------------------------
     def check_dataframe_for_new_securities(self, dataframe):

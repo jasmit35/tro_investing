@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from time import sleep
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from python.services.investing_transactions_processor import InvestingTransactionsProcessor
 from python.services.std_app import StdApp
 from python.services.std_dbconn import get_database_connection
@@ -45,16 +45,19 @@ class TroInvesting(StdApp):
     @function_logger
     def load_config_file(self, config_file_path):
 
-        class Settings(BaseSettings):
-                environment: str
+        class All_Settings(BaseSettings):
+            model_config = SettingsConfigDict(env_file=(config_file_path))
+            host: str = "0.0.0.0"
+            db_name: str = "unknown"
+            db_user: str = "unknown"
+            db_password: str = "unknown"
+            log_level: str = "info"
 
-                class Config:
-                    env_file = config_file_path
-                    env_file_encoding = "utf-8" 
+        self._all_settings = All_Settings()
 
-        settings = Settings()
+        self._logger.debug(f"settings is {self._all_settings}\n")
+        self._logger.debug(f"settings model dump is {self._all_settings.model_dump()}\n")
         
-        return settings
         
 
 
@@ -66,7 +69,7 @@ class TroInvesting(StdApp):
         #  The config file is expected to be in the etc directory under the
         #  current working directory and should be named <app_name>.cfg
         config_dir = Path.cwd() / "etc"
-        config_file_path = config_dir / f"{self._app_name}.cfg"
+        config_file_path = config_dir / f"{self._environment}.env"
         self._logger.debug(f"config file path is {config_file_path}\n")
 
         #  If the config file does not exist or is not a file, log a warning and return.
@@ -80,9 +83,8 @@ class TroInvesting(StdApp):
             return
 
         #  Load the config file and update the app's config with the values from the file
-        more_config = self.load_config_file(config_file_path)
+        self.load_config_file(config_file_path)
 
-        self._logger.debug(f"more_config is {more_config}\n")
 
     #-------------------------------------------------------------------------------------------------------------------------------
     @function_logger

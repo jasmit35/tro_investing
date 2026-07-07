@@ -22,6 +22,11 @@ start-service: ## Start a service on the swarm cluster using the image
 	@echo "🚀  Starting the service ..."
 	ansible-playbook -i ansible/inventory/test_swarm.yaml ansible/playbooks/start_$(environment)_service.yaml
 
+#-------------------------------------------------------------------------------
+
+.PHONY: clean
+clean: ## Remove old files to prepare for a test run
+
 
 ################################################################################
 
