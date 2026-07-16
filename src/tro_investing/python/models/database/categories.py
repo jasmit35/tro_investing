@@ -1,70 +1,82 @@
 """
 categories.py
-===================
-This module contains the Categories class which is used to interact with the 'categories' table in the database.
+This module is used to interact with the 'categories' table in the database.
 """
+
 from dataclasses import dataclass
-from logging import getLogger
 
-from python.services.std_logging import function_logger
+from python.services.std_dbconn import DatabaseConnection
+from python.services.std_logging import function_logger, getLogger
 
 
+#=======================================================================================================================
 @dataclass
 class Category:
-    category_id: int = 0
-    category_name: str = ""
-    category_type_fk: int = 0
-    category_group_fk: int = 0
-    category_description: str = ""
-    category_hidden: bool = False
+    _category_id: int = 0
+    _category_name: str = None 
+    _category_type_fk: int = 0
+    _category_group_fk: int = 0
+    _category_description: str = None 
+    _category_hidden: bool = False
 
+#=======================================================================================================================
 class Categories:
-    # ------------------------------------------------------------------------------------------------------------------
-    def __init__(self, db_conn):
-        self._db_conn = db_conn
 
+    def __init__(self, database_connection: DatabaseConnection):
         self._logger = getLogger()
+        self._logger.debug(f"Begin 'Categories.__init__({database_connection=})")
 
-    # ------------------------------------------------------------------------------------------------------------------
+        self._database_connection = database_connection
+
+        self._logger.debug("End   'Categories.__init__' returns - None")
+
     def __str__(self):
         return "Categories"
 
-    __repr__ = __str__
+    def __repr__(self):
+        return "Categories"
 
-    # ------------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------
     #  @function_logger  #  Generates too much log output to be useful
-    def get_id(self, category_name, insert_missing=False):
-        sql = "select category_id from tro.categories where category_name = %s"
+    def get_by_name(self, category_name: str, insert_missing: bool=False) -> Category:
+        sql = "SELECT * FROM tro.categories WHERE category_name = %s"
 
-        with self._db_conn.cursor() as cursor:
-            cursor.execute(sql, (str(category_name),))
+        with self._database_connection.get_cursor() as cursor:
+            cursor.execute(sql, (category_name,))
             results = cursor.fetchone()
 
-        category_id = None if results is None else results[0]
+        the_category = None if results is None else Category(
+            _category_id=results[0],
+            _category_name=results[1],
+            _category_type_fk=results[2],
+            _category_group_fk=results[3],
+            _category_description=results[4],
+            _category_hidden=results[5]
+        )
 
-        if category_id is None and insert_missing:
-            category_id = self.insert(Category(category_name=str(category_name)))
+        if the_category is None and insert_missing:
+            new_category = Category(_category_name=category_name)
+            the_category = self.insert(new_category)
 
-        return category_id
+        return the_category
 
     #------------------------------------------------------------------------------------------------------------------
     @function_logger
-    def insert(self, category_data):
-        category_id = None
-        sql = """
-            insert into tro.categories (category_name, category_type_fk, category_group_fk)
-            values (%s, %s, %s)
-            returning category_id
-        """
+    def insert(self, category: Category) -> int:
+        sql = "INSERT INTO tro.categories VALUES (DEFAULT, %s, %s, %s, %s, %s) RETURNING category_id"
         
-        with self._db_conn.cursor() as cursor:
+        with self._database_connection.get_cursor() as cursor:
             cursor.execute(sql,
-                (category_data.category_name, category_data.category_type_fk, category_data.category_group_fk,))
-            results = cursor.fetchone()
+                (
+                    category._category_name,
+                    category._category_type_fk,
+                    category._category_group_fk,
+                    category._category_description,
+                    category._category_hidden,
+                )
+            )
+            category_id = cursor.fetchone()[0]
             
-        if results:
-            category_id = results[0]
-
         return category_id
 
     #------------------------------------------------------------------------------------------------------------------
@@ -77,7 +89,7 @@ class Categories:
                     category_group_fk = %s
             where category_id = %s
             """
-        with self._db_conn.cursor() as cursor:
+        with self._database_connection.get_cursor() as cursor:
             cursor.execute(
                 sql,
                 (
@@ -97,7 +109,7 @@ class Categories:
             delete from tro.categories
             where category_id = %s
         """
-        with self._db_conn.cursor() as cursor:
+        with self._database_connection.get_cursor() as cursor:
             cursor.execute(sql, (category_id,))
             rows_deleted = cursor.rowcount
 
@@ -111,7 +123,7 @@ class Categories:
             insert into tro.categories OVERRIDING SYSTEM VALUE values (0, 'Uncategorized', 0, 0);
             select setval('tro.categories_category_id_seq', 1, false);
         """
-        with self._db_conn.cursor() as cursor:
+        with self._database_connection.get_cursor() as cursor:
             cursor.execute(sql)
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -120,7 +132,7 @@ class Categories:
         sql = """
             select count(*) from tro.categories;
         """
-        with self._db_conn.cursor() as cursor:
+        with self._database_connection.get_cursor() as cursor:
             cursor.execute(sql)
             row_count = cursor.fetchone()[0]
 
@@ -128,20 +140,20 @@ class Categories:
 
     # ----------------------------------------------------------------------
     @function_logger
-    def check_dataframe_for_new_categories(self, dataframe):
+    def check_for_new_categories(self, dataframe):
         new_category_names = []
         for category_name in dataframe["Category"].unique():
 
             #  Check if the category exists in the database
-            category_id = self.get_id(category_name)
+            category_id = self.get_by_name(category_name)
 
             #  If the category doesn't exist, insert it
             if category_id is None:
-                category_id = self.insert(category_name)
+                new_category = Category(_category_name=category_name)
+                self.insert(new_category)
                 new_category_names.append(category_name)
 
         return new_category_names
-
 
 """
     # ------------------------------------------------------------------------------------------------------------------
@@ -153,7 +165,7 @@ class Categories:
             from tro.categories
             order by category_name
         
-        with self._db_conn.cursor() as cursor:
+        with self._database_connection.get_cursor() as cursor:
             cursor.execute(sql)
             results = cursor.fetchall()
             for result in results:

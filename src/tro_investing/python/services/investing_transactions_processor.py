@@ -12,13 +12,16 @@ from pathlib import Path
 import pandas as pd
 from python.models.database.accounts import Accounts
 from python.models.database.categories import Categories
-from python.models.database.invest_trans import InvestTrans
+from python.models.database.invest_trans import InvestTran, InvestTrans
 from python.models.database.securites import Securities
 from python.services.std_logging import function_logger
 
 
 # ======================================================================
 class InvestingTransactionsProcessor:
+
+    #--------------------------------------------------------------------------------------------------------------------------------------------
+    #  Dunder methods
     def __init__(self, db_conn, report, file_path):
         self._logger = getLogger()
         self._logger.info(f"Begin 'InvestingTransactionsProcessor.__init__({file_path=})")
@@ -33,9 +36,6 @@ class InvestingTransactionsProcessor:
         self._securities = Securities(self._db_conn)
 
         self._logger.info("End   'InvestingTransactionsProcessor.__init__()")
-
-    #--------------------------------------------------------------------------------------------------------------------------------------------
-    #  Dunder methods
     
     def __str__(self):
         return f"InvestingTransactionsProcessor({self._file_path=})"
@@ -44,50 +44,62 @@ class InvestingTransactionsProcessor:
         return f"InvestingTransactionsProcessor({self._file_path=})"
 
     # ----------------------------------------------------------------------
+    def check_for_new_stuff(self, dataframe):
+        #  Check for any new accounts and add them to the database
+        new_account_names = self._accounts.check_for_new_accounts(dataframe)
+        if not new_account_names:
+            self._logger.info("No new accounts were found")
+        else:
+            self.report("\n\n    The following new accounts have been added:\n")
+            for account_name in new_account_names:
+                self.report(f"      {account_name}\n")
+
+        #  Check for any new securities and add them to the database
+        new_security_names = self._securities.check_for_new_securities(dataframe)
+        if not new_security_names:
+            self._logger.info("No new securities were found")
+        else:
+            self.report("\n\n    The following new securities have been added:\n")
+            for security_name in new_security_names:
+                self.report(f"      {security_name}\n") 
+
+        #  Check for any new categories and add them to the database
+        new_category_names = self._categories.check_for_new_categories(dataframe)
+        if not new_category_names:
+            self._logger.info("No new categories were found")
+        else:
+            self.report("\n\n    The following new categories have been added:\n")
+            for category_name in new_category_names:
+                self.report(f"      {category_name}\n") 
+
+    # ----------------------------------------------------------------------
     @function_logger
     def process_file(self):
         """
         Process the transactions in the Excel file.
         """
-        #  First determine the date range the transactions are for.
-        #  Then delete the existing transactions for that date range.
+        #  Determine the date range the transactions are for.
         start_date, end_date = self.extract_date_range()
-        self.delete_obsolete_tranactions(start_date, end_date)
+
+        #  Delete the existing transactions for that date range.
+        self._invest_trans.delete_range(start_date, end_date)
 
         #  Load data into pandas dataframe
         pd.set_option("future.no_silent_downcasting", True)
-        df = pd.read_excel(self._file_path, engine="openpyxl", header=4)
+        dataframe = pd.read_excel(self._file_path, engine="openpyxl", header=4)
 
         #  Use pandas to clean the data before processing
-        df = self.massage_data(df)
+        dataframe = self.massage_data(dataframe)
 
-        #  Save the cleaned data to a new Excel file for reference
+        #  Save the cleaned data to a new Excel file for reference only
         cleaned_file_path = Path(self._file_path.parent) / f"cleaned_{self._file_path.stem}.{self._file_path.suffix}"
-        df.to_excel(cleaned_file_path, index=False) 
+        dataframe.to_excel(cleaned_file_path, index=False)
 
-        #  Check for any new accounts and add them to the database
-        new_account_names = self._accounts.check_dataframe_for_new_accounts(df)
-        if new_account_names.__len__() > 0:
-            self.report("\n\n    The following new accounts have been added:\n")
-            for account_name in new_account_names:
-                self.report(f"      {account_name}\n")  
-
-        #  Check for any new categories and add them to the database
-        new_category_names = self._categories.check_dataframe_for_new_categories(df)
-        if new_category_names.__len__() > 0:
-            self.report("\n\n    The following new categories have been added:\n")
-            for category_name in new_category_names:
-                self.report(f"      {category_name}\n")  
-
-        #  Check for any new securities and add them to the database
-        new_security_names = self._securities.check_dataframe_for_new_securities(df)
-        if new_security_names.__len__() > 0:
-            self.report("\n\n    The following new securities have been added:\n")
-            for security_name in new_security_names:
-                self.report(f"      {security_name}\n")  
+        #  Check for any new accounts, categories, and securities and add them to the database
+        self.check_for_new_stuff(dataframe)
 
         #  Load the transactions from the dataframe
-        rc = self.load_transactions_from_dataframe(df)
+        rc = self.load_transactions_from_dataframe(dataframe)
         #  self._report.print_footer(rc)
 
         return rc
@@ -99,58 +111,58 @@ class InvestingTransactionsProcessor:
 
     # ------------------------------------------------------------------------------------------------------------------
     @function_logger
-    def massage_data(self, df):
+    def massage_data(self, dataframe):
         """
         Use pandas to clean the data before processing
         """
         # Drop the last 4 rows
-        df = df.iloc[:-4]
+        dataframe = dataframe.iloc[:-4]
 
         #  Drop all rows and columns that are completely empty
-        df = df.dropna(axis=0, how="all")
-        df = df.dropna(axis=1, how="all")
+        dataframe = dataframe.dropna(axis=0, how="all")
+        dataframe = dataframe.dropna(axis=1, how="all")
 
         #  Assign the desired column names
-        df.columns = ['Date', 'Account', 'Action', 'Security', 'Symbol', 'Category', 'Memo',
+        dataframe.columns = ['Date', 'Account', 'Action', 'Security', 'Symbol', 'Category', 'Memo',
             'Price', 'Shares', 'Commission', 'Cash', 'Invested', 'cash+invested']
 
         #  Drop the rows that don't have an action since they are not transactions.
-        df.dropna(subset=['Action'], inplace=True)
+        dataframe.dropna(subset=['Action'], inplace=True)
 
         # Fill in blank values with the previous value for the listed columns
         cols = ["Date", "Account"]
-        df.loc[:, cols] = df.loc[:, cols].ffill()
+        dataframe.loc[:, cols] = dataframe.loc[:, cols].ffill()
 
         # Fill in some of the NaN values
-        df.fillna({"Symbol": "Unknown"}, inplace=True)
-        df.fillna({"Security": "Unknown"}, inplace=True)
+        dataframe.fillna({"Security": "Unknown"}, inplace=True)
+        dataframe.fillna({"Category": "Unknown"}, inplace=True)
         
-        df.fillna({"Category": ""}, inplace=True)
-        df.fillna({"Memo": ""}, inplace=True)
+        dataframe.fillna({"Memo": ""}, inplace=True)
+        dataframe.fillna({"Symbol": ""}, inplace=True)
         
-        df.fillna({"Shares": 0}, inplace=True)
-        df.fillna({"Commission": 0}, inplace=True)
-        df.fillna({"Cash": 0}, inplace=True)
+        dataframe.fillna({"Shares": 0}, inplace=True)
+        dataframe.fillna({"Commission": 0}, inplace=True)
+        dataframe.fillna({"Cash": 0}, inplace=True)            
 
-        return df   
+        return dataframe   
 
     # ----------------------------------------------------------------------
     @function_logger
-    def load_transactions_from_dataframe(self, df):
+    def load_transactions_from_dataframe(self, dataframe):
         """
         Read each row of the dataframe and turn it into an investment transaction record.
         """
         self.report(("=" * 132) + "\n")
-        self.report("\n\n    The following transactions have been added:\n")
-        self.report((" " * 2) + "Date")
-        self.report((" " * 8) + "Account")
-        self.report((" " * 20) + "Security")
-        self.report((" " * 20) + "Category")
-        self.report((" " * 20) + "Amount")
-        self.report("\n")
+        self.report("\n\n    The following transactions have been added:\n\n")
+        rpt_str = f"{'  Date'.ljust(12)}"
+        rpt_str += f"{'Account'.ljust(37)}"
+        rpt_str += f"{'Security'.ljust(30)}"
+        rpt_str += f"{'Category'.ljust(35)}"
+        rpt_str += f"{'Amount'.rjust(10)}\n"
+        self.report(f"{rpt_str}\n")
 
-        for row in df.itertuples():
-            #  Skip balance rows since they don't have a valid date and are not transactions.
+        for row in dataframe.itertuples():
+            #  Skip bal ance rows since they don't have a valid date and are not transactions.
             if type(row.Date) is str and row.Date[:7] == "BALANCE":
                 continue
 
@@ -158,13 +170,13 @@ class InvestingTransactionsProcessor:
             if type(row.Security) is None:
                 continue    
 
-            # Use data from each dataframe row to create InvestTrans object and insert it
-            nt = InvestTrans()
+            # Use data from each dataframe row to create an InvestTran object and insert it
+            nt = InvestTran()
 
             #  Get the values for the foreign keys
-            nt.account_fk  = self._accounts.get_id(row.Account, True)
-            nt.security_fk = self._securities.get_by_name(row.Security, insert_missing=True)._security_id
-            nt.category_fk = self._categories.get_id(row.Category, True)
+            nt.account_fk  = self._accounts.get_by_name(row.Account, True)._account_id
+            nt.security_fk = self._securities.get_by_name(row.Security, True)._security_id
+            nt.category_fk = self._categories.get_by_name(row.Category, True)._category_id
 
             #  Set the remaining values for the transaction record.
             nt.transaction_date = row.Date
@@ -175,24 +187,24 @@ class InvestingTransactionsProcessor:
             nt.price            = row.Price
             nt.shares           = row.Shares
             nt.commission       = row.Commission
+            nt.data_source      = "quicken"
+
             if isnan(row.Invested): 
                 nt.amount = row.Cash
             else:
                 nt.amount = row.Invested
 
-            #  
-            self._invest_trans.insert(self._db_conn, nt)
+            #  Insert the transaction into the database
+            self._invest_trans.insert(nt)
 
             #  Report the transaction that was just added.
-            amount_string = f"{nt.amount:10.2f}"
-            self.report(
-                f"{nt.transaction_date.strftime('%m/%d/%y').ljust(10)} \
-                {row.Account.ljust(35)} \
-                {row.Security.ljust(20)} \
-                {str(row.Category).ljust(35)} \
-                {amount_string} \
-                \n"
-            )
+            rpt_str = f"{row.Date.strftime('%m/%d/%y').ljust(10)}"
+            rpt_str += f"{row.Account.ljust(35)}"
+            rpt_str += f"{row.Security.ljust(32)}"
+            rpt_str += f"{row.Category.ljust(35)}"
+            rpt_str += f"{nt.amount:10.2f}"
+            self.report(f"{rpt_str}\n")
+
         return 0
 
     # ----------------------------------------------------------------------
@@ -205,14 +217,3 @@ class InvestingTransactionsProcessor:
         start_date = date_header_split[3]
         end_date = date_header_split[5]
         return start_date, end_date
-
-    # ----------------------------------------------------------------------
-    def delete_obsolete_tranactions(self, start_date, end_date):
-        sql = """
-            DELETE FROM tro.invest_trans 
-            WHERE transaction_date >= %s AND transaction_date <= %s 
-            AND DATA_SOURCE = 'quicken'
-            """
-        with self._db_conn.cursor() as cursor:
-            cursor.execute(sql, (start_date, end_date))
-            return cursor.rowcount

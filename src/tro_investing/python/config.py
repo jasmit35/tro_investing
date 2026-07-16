@@ -1,73 +1,56 @@
-from argparse import ArgumentParser
+"""
+config.py
+"""
+from pathlib import Path
 
-from ruamel import yaml as pyyaml
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from python.services.std_dbconn import DatabaseConnection
 from python.services.std_logging import function_logger
 
-#  from python.services.std_report import StdReport
 
-
-#-----------------------------------------------------------------------------
-def configure_app(app):
-    #  app.set_default_values()
-    app.set_config_file_values()
-    app.set_command_line_values()
-
-#-----------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------
 @function_logger
-def set_command_line_values(app):
-        parser = ArgumentParser(description="TROBanking")
-        parser.add_argument(
-            "-s",
-            "--start_date",
-            required=False,
-            help="Date of the earliest transaction.",
-        )
-        parser.add_argument(
-            "-f",
-            "--finish_date",
-            required=False,
-            help="Date of the last transaction.",
-        )
-        parser.add_argument(
-            "-c",
-            "--cfgfile",
-            required=False,
-            default="etc/tro_banking.cfg",
-            help="Name of the configuration file to use",
-        )
-        args = parser.parse_args()
-        app._config.update(args.__dict__)
+def configure_app(app):
+    config_dir = Path.cwd() / "etc"
+    config_file_path = config_dir / f"{app._environment}.env"
+    app._logger.debug(f"config file path is {config_file_path}\n")
 
-        # Log the config for debugging purposes
-        app._logger.debug(f"config is {app._config}\n")
-
+    #  If the config file does not exist or is not a file, log a warning and return.
+    #  The app will use the default values in this case.
+    if not config_file_path.exists():
+        app._logger.warning(f"Configuration file {config_file_path} does not exist. Using defaults.\n")
         return
 
-#-----------------------------------------------------------------------------
-def load_yaml_config_file(file_path, environment):
+    if not config_file_path.is_file():
+        app._logger.warning(f"Configuration file {config_file_path} is not a file. Using defaults.\n")
+        return
 
-    yaml = pyyaml.YAML(typ="safe")
-    with open(file_path) as f:
-        cfg = yaml.load(f)
-        return cfg[environment] 
-"""
-        #-----------------------------------------------------------------------------
-@function_logger
-def set_default_values(app):
-    app.set_default_values()
+    # Use Pydantic's BaseSettings to load the config file and update the app's config with those values.
+    class All_Settings(BaseSettings):
+        model_config = SettingsConfigDict(env_file=(config_file_path))
 
-    #  The default for the report file is expected to be in a 'reports' directory under the current working directory.
-    report_file = Path.cwd() / "reports"
-    report_path = Path(report_file)
-    app._config["report_path"] = report_path
+        db_name: str = "unknown"
+        db_user: str = "unknown"
+        db_password: str = "unknown"
 
-    #  The default for the stage directory is expected to be a directory under the current working directory.
-    stage_dir = Path.cwd() / "stage"
-    stage_dir_path = Path(stage_dir)
-    app._config["stage_dir_path"] = stage_dir_path
+        host: str = "localhost"
+        port: int = 5432
 
-    # Log the config for debugging purposes
-    app._logger.debug(f"config is {app._config}\n")
-    return
-"""
+        log_level: str = "info"
+
+    #  Load the config file and update the app's config with the values from the file
+    app._settings = All_Settings()
+    app._logger.debug(f"settings model dump is {app._settings.model_dump()}\n")
+
+    app._database_connection = DatabaseConnection(
+        database=app._settings.db_name,
+        user_id=app._settings.db_user,
+        password=app._settings.db_password,
+        host=app._settings.host,
+        port=app._settings.port,
+        )
+
+    app._logger.level = app._settings.log_level
+
+#----------------------------------------------------------------------------------------------------------------------

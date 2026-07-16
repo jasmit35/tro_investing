@@ -20,13 +20,15 @@ build-image: ## Build the Docker image
 .PHONY: start-service 
 start-service: ## Start a service on the swarm cluster using the image
 	@echo "🚀  Starting the service ..."
-	ansible-playbook -i ansible/inventory/test_swarm.yaml ansible/playbooks/start_$(environment)_service.yaml
+	ansible-playbook -i ansible/inventory/test_swarm.yaml ansible/playbooks/start_$(ENVIRONMENT)_service.yaml
 
 #-------------------------------------------------------------------------------
 
 .PHONY: clean
 clean: ## Remove old files to prepare for a test run
-
+	@rm src/${app_name}/logs/*.log
+	@rm src/${app_name}/reports/*.rpt
+# @mv src/${app_name)/stage/*.xlsx.bkp src/${app_name)/stage/*.xlsx
 
 ################################################################################
 
