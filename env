@@ -1,7 +1,7 @@
 #  This file is used to set environment variables for the Makefile
 
 app_name = "tro_investing"
-app_version = "v26.1.0.0.2"
+app_version = "v26.1.0.0.3"
 
 #  Don't change these unless you know what you're doing
 app_home = "/opt/app/$(app_name)"
