@@ -7,6 +7,7 @@ from time import sleep
 
 from python.services.investing_transactions_processor import InvestingTransactionsProcessor
 from python.services.std_app import StdApp
+from python.services.std_dbconn import DatabaseConnection
 from python.services.std_logging import function_logger
 from python.services.std_report import StdReport
 from python.services.version import get_version
@@ -15,21 +16,25 @@ from schedule import every, idle_seconds, run_pending
 
 #===================================================================================================================================
 class TroInvesting(StdApp):
-    _database_connection: any = None
-    _report_dir_path: Path = Path.cwd() / "reports"
-    _stage_dir_path: Path = Path.cwd() / "stage"
+    _database_connection: DatabaseConnection = None
+    _output_report: StdReport = None
+    _stage_dir_path: Path = None
+    _report_dir_path: Path = None
 
     #-------------------------------------------------------------------------------------------------------------------------------
     #  Dunder methods
 
     def __init__(self):
         super().__init__("tro_investing", get_version())
+        self._report_dir_path = Path.cwd() / "reports"
+        self._stage_dir_path = Path.cwd() / "stage"
+
 
     def __repr__(self):
-        return "TroInvesting"
+        return f"TroInvesting(f'{self._output_report=}, {self._stage_dir_path=}')"
 
     def __str__(self):
-        return "TroInvesting"
+        return f"TroInvesting(f'{self._output_report=}, {self._stage_dir_path=}')"
         
     #-------------------------------------------------------------------------------------------------------------------------------
     @function_logger
@@ -46,14 +51,19 @@ class TroInvesting(StdApp):
         else:
             file = file_list[0]
 
-            output_report = StdReport("TRO Investing", self._version, self._report_dir_path)
+            output_report = StdReport(self._app_name, self._version, self._report_dir_path)
             output_report.print_header()
             output_report.report(f"\nProcessing file {file}\n")
 
-            invest_trans_processor = InvestingTransactionsProcessor(self._database_connection, output_report, file)
+            invest_trans_processor = InvestingTransactionsProcessor(self._logger,
+                                        output_report, 
+                                        self._database_connection,
+                                        file)
+            
             rc = invest_trans_processor.process_file()
 
             output_report.print_footer(rc)
+            output_report = None  #  close the report file
 
             #  Rename the processed file to have a .bkp suffix so it is not processed again.
             new_file_path = f"{file}.bkp"
@@ -62,30 +72,36 @@ class TroInvesting(StdApp):
         return rc
 
     #-------------------------------------------------------------------------------------------------------------------------------
+    #  Short cut to report messages to the output report.
+    @function_logger
+    def report(self, message: str):
+        self._output_report.report(message)
+
+    #-------------------------------------------------------------------------------------------------------------------------------
     @function_logger
     def run(self):
+        run_time = datetime.now().strftime("%H:%M")
+        self._logger.info(f"run time : {run_time} - processing files\n")
+
+        #  every 15 minutes for the next 24 hours process the stagged files
+        #  stop_time = timedelta(hours=24)
         stop_time = timedelta(minutes=15)
+        #  every(15).minutes.until(stop_time).do(this_app.process_stagged_files)
         every(5).minutes.until(stop_time).do(self.process_investing_file)
-    
+
         while True:
             n = idle_seconds()  # seconds until the next job is due
 
             if n is None:  # no more jobs to run
-                self._logger.info("Finised. Exiting.\n")
+                self._logger.info("No more jobs to run. Exiting.\n")
                 break
 
             if n > 0:
                 sleep(n)  # sleep until the next job is due
+                self._logger.info("Running pending jobs...\n")
                 run_pending()
 
         return 0
-
-    #-------------------------------------------------------------------------------------------------------------------------------
-    """
-    @function_logger
-    def set_command_line_values(self):
-        super().set_command_line_values()   
-    """
 
 
     #-------------------------------------------------------------------------------------------------------------------------------
@@ -103,6 +119,7 @@ class TroInvesting(StdApp):
 
         return file_list
 
+"""
     #-------------------------------------------------------------------------------------------------------------------------------
 #    @function_logger
 #    def close(self):
@@ -158,5 +175,7 @@ class TroInvesting(StdApp):
 #          self._yaml_cfg = self.load_yaml_cfg(environment)
 #          self._db_conn = get_database_connection(environment, self._yaml_cfg)
 #          self._stage_dir_path = self.set_stage_dir_path()
-#  """
-#
+    @function_logger
+    def set_command_line_values(self):
+        super().set_command_line_values()   
+"""

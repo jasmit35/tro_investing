@@ -11,10 +11,12 @@ if __name__ == "__main__":
     
     try:
         this_app = TroInvesting()
+        return_code = 98
         configure_app(this_app)
+        return_code = 97
         return_code = this_app.run()
     except Exception as e:
-        print(f"Uncaught exception while running app: {e}")
+        this_app._logger.error(f"Uncaught exception while running app: {e}")
         print_exc()
 
     exit(return_code)

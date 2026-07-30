@@ -5,17 +5,18 @@ Database connection utility functions.
 """
 
 from psycopg import connect
-from python.services.std_logging import getLogger
+from python.services.std_logging import function_logger, getLogger
 
 
 #======================================================================================================================
-class DatabaseConnectionError(Exception):
-    def __init__(self):
+class DatabaseConnectionError:
+    def __init__(self, exception: Exception):
         logger = getLogger()
-        logger.error(f"Database connection error: {self.args[0]}")  
+        logger.error(f"Database connection error: {Exception}")  
         raise Exception
 
 #======================================================================================================================
+@function_logger
 class DatabaseConnection:
     def __init__(self, database, user_id, password, host="localhost", port="5432"):
         self._database = database

@@ -26,9 +26,12 @@ start-service: ## Start a service on the swarm cluster using the image
 
 .PHONY: clean
 clean: ## Remove old files to prepare for a test run
-	@rm src/${app_name}/logs/*.log
-	@rm src/${app_name}/reports/*.rpt
-# @mv src/${app_name)/stage/*.xlsx.bkp src/${app_name)/stage/*.xlsx
+	- rm /mnt/nfs_storage/${ENVIRONMENT}/tro_investing/logs/*.log
+#
+	- rm /mnt/nfs_storage/${ENVIRONMENT}/tro_investing/reports/*.rpt
+#  @rm src/${app_name}/logs/*.log
+#  @rm src/${app_name}/reports/*.rpt
+#  @mv src/${app_name)/stage/*.xlsx.bkp src/${app_name)/stage/*.xlsx
 
 ################################################################################
 

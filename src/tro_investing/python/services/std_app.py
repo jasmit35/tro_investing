@@ -5,6 +5,7 @@ std_app.py
 """
 from datetime import datetime
 from os import environ
+from pathlib import Path
 
 from python.services.std_logging import StdLogging
 
@@ -35,14 +36,14 @@ class StdApp:
         
         #  Set up the default logging for the app based on the environment.
         this_day = datetime.today().strftime("%y_%m_%d")
-        log_file = f"logs/{self._app_name}_{this_day}.log"
+        log_file = Path.cwd() / f"logs/{self._app_name}_{this_day}.log"
         match (self._environment): 
             case "devl":        
                 self._logger = StdLogging("DEBUG", log_file) 
             case "test":
-                self._logger = StdLogging("INFO", log_file) 
+                self._logger = StdLogging("DEBUG", log_file) 
             case "prod":
-                self._logger = StdLogging("WARNING", log_file)
+                self._logger = StdLogging("DEBUG", log_file)
             case _:
                 raise ValueError(f"Invalid environment - {self._environment}")
 

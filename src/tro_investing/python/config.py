@@ -1,6 +1,7 @@
 """
 config.py
 """
+from os import environ
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -12,6 +13,8 @@ from python.services.std_logging import function_logger
 #----------------------------------------------------------------------------------------------------------------------
 @function_logger
 def configure_app(app):
+    #  Determine the config file path based on the app's environment and log it.
+    app._environment = environ.get("ENVIRONMENT", "prod")
     config_dir = Path.cwd() / "etc"
     config_file_path = config_dir / f"{app._environment}.env"
     app._logger.debug(f"config file path is {config_file_path}\n")

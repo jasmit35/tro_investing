@@ -5,7 +5,6 @@ This module provides the InvestingTransactionsProcessor class for processing
 transactions from an Excel spreadsheet.
 """
 from datetime import datetime
-from logging import getLogger
 from math import isnan
 from pathlib import Path
 
@@ -22,12 +21,11 @@ class InvestingTransactionsProcessor:
 
     #--------------------------------------------------------------------------------------------------------------------------------------------
     #  Dunder methods
-    def __init__(self, db_conn, report, file_path):
-        self._logger = getLogger()
+    def __init__(self, logger, report, db_conn, file_path):
+        self._logger = logger 
         self._logger.info(f"Begin 'InvestingTransactionsProcessor.__init__({file_path=})")
-
-        self._db_conn = db_conn
         self._report = report
+        self._db_conn = db_conn
         self._file_path = file_path
 
         self._accounts = Accounts(self._db_conn)
@@ -154,9 +152,9 @@ class InvestingTransactionsProcessor:
         """
         self.report(("=" * 132) + "\n")
         self.report("\n\n    The following transactions have been added:\n\n")
-        rpt_str = f"{'  Date'.ljust(12)}"
-        rpt_str += f"{'Account'.ljust(37)}"
-        rpt_str += f"{'Security'.ljust(30)}"
+        rpt_str = f"{'  Date'.ljust(14)}"
+        rpt_str += f"{'Account'.ljust(35)}"
+        rpt_str += f"{'Security'.ljust(32)}"
         rpt_str += f"{'Category'.ljust(35)}"
         rpt_str += f"{'Amount'.rjust(10)}\n"
         self.report(f"{rpt_str}\n")
@@ -200,7 +198,7 @@ class InvestingTransactionsProcessor:
             #  Report the transaction that was just added.
             rpt_str = f"{row.Date.strftime('%m/%d/%y').ljust(10)}"
             rpt_str += f"{row.Account.ljust(35)}"
-            rpt_str += f"{row.Security.ljust(32)}"
+            rpt_str += f"{row.Security.ljust(35)}"
             rpt_str += f"{row.Category.ljust(35)}"
             rpt_str += f"{nt.amount:10.2f}"
             self.report(f"{rpt_str}\n")
