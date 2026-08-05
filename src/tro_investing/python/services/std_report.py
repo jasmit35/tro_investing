@@ -8,7 +8,7 @@ from pathlib import Path
 
 class StdReport:
     #  -----------------------------------------------------------------------------
-    def __init__(self, app_name="Hello World", version="v0.0.0.0", rpt_dir="reports"):
+    def __init__(self, app_name="Hello World", version="v0.0.0.0", rpt_dir="reports") -> None:
         self._app_name = app_name
         self._version = version
         self._rpt_dir = rpt_dir
@@ -29,7 +29,7 @@ class StdReport:
         self._file.close()
 
     #  -----------------------------------------------------------------------------
-    def report(self, output_string):
+    def report(self, output_string) -> None:
         self._file.write(output_string)
 
     #  -----------------------------------------------------------------------------

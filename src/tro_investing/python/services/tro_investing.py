@@ -5,8 +5,7 @@ from pathlib import Path
 from time import sleep
 
 from fire_starter import StdApp, function_logger
-from python.services.investing_transactions_processor import \
-    InvestingTransactionsProcessor
+from python.services.investing_transactions_processor import InvestingTransactionsProcessor
 from python.services.std_dbconn import DatabaseConnection
 from python.services.std_report import StdReport
 from python.services.version import get_version
@@ -15,7 +14,7 @@ from schedule import every, idle_seconds, run_pending
 
 #===================================================================================================================================
 class TroInvesting(StdApp):
-    _database_connection: DatabaseConnection = None
+    _database_connection: DatabaseConnection
     _output_report: StdReport
     _stage_dir_path: Path = None
     _report_dir_path: Path
@@ -25,6 +24,7 @@ class TroInvesting(StdApp):
 
     def __init__(self) -> None:
         super().__init__("tro_investing", get_version())
+        self._database_connection = DatabaseConnection(self._logger)
         self._output_report = StdReport(self._app_name, self._version, "reports")
         self._report_dir_path = Path.cwd() / "reports"
         self._stage_dir_path = Path.cwd() / "stage"
