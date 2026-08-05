@@ -1,42 +1,41 @@
-"""
-"""
+""" """
 
 from datetime import datetime, timedelta
 from pathlib import Path
 from time import sleep
 
-from python.services.investing_transactions_processor import InvestingTransactionsProcessor
-from python.services.std_app import StdApp
+from fire_starter import StdApp, function_logger
+from python.services.investing_transactions_processor import \
+    InvestingTransactionsProcessor
 from python.services.std_dbconn import DatabaseConnection
-from python.services.std_logging import function_logger
 from python.services.std_report import StdReport
 from python.services.version import get_version
 from schedule import every, idle_seconds, run_pending
 
 
-#===================================================================================================================================
+# ===================================================================================================================================
 class TroInvesting(StdApp):
     _database_connection: DatabaseConnection = None
-    _output_report: StdReport = None
+    _output_report: StdReport
     _stage_dir_path: Path = None
-    _report_dir_path: Path = None
+    _report_dir_path: Path
 
-    #-------------------------------------------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------------------------------------------
     #  Dunder methods
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("tro_investing", get_version())
+        self._output_report = StdReport(self._app_name, self._version, "reports")
         self._report_dir_path = Path.cwd() / "reports"
         self._stage_dir_path = Path.cwd() / "stage"
-
 
     def __repr__(self):
         return f"TroInvesting(f'{self._output_report=}, {self._stage_dir_path=}')"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"TroInvesting(f'{self._output_report=}, {self._stage_dir_path=}')"
-        
-    #-------------------------------------------------------------------------------------------------------------------------------
+
+    # -------------------------------------------------------------------------------------------------------------------------------
     @function_logger
     def process_investing_file(self):
         rc: int = 98
@@ -55,11 +54,10 @@ class TroInvesting(StdApp):
             output_report.print_header()
             output_report.report(f"\nProcessing file {file}\n")
 
-            invest_trans_processor = InvestingTransactionsProcessor(self._logger,
-                                        output_report, 
-                                        self._database_connection,
-                                        file)
-            
+            invest_trans_processor = InvestingTransactionsProcessor(
+                self._logger, output_report, self._database_connection, file
+            )
+
             rc = invest_trans_processor.process_file()
 
             output_report.print_footer(rc)
@@ -71,13 +69,13 @@ class TroInvesting(StdApp):
 
         return rc
 
-    #-------------------------------------------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------------------------------------------
     #  Short cut to report messages to the output report.
     @function_logger
     def report(self, message: str):
         self._output_report.report(message)
 
-    #-------------------------------------------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------------------------------------------
     @function_logger
     def run(self):
         run_time = datetime.now().strftime("%H:%M")
@@ -103,79 +101,16 @@ class TroInvesting(StdApp):
 
         return 0
 
-
-    #-------------------------------------------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------------------------------------------
     #  The files to process are expected to be in the stage directory,
     #  and have a name that starts with "invest" and have a suffix of ".xlsx".
-    #-------------------------------------------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------------------------------------------
     @function_logger
-    def search_for_investing_files(self):
+    def search_for_investing_files(self) -> list[Path]:
         file_list = []
 
         for stage_file in self._stage_dir_path.iterdir():
-
-            if stage_file.name[:6] == "invest" and  stage_file.suffix == ".xlsx":
+            if stage_file.name[:6] == "invest" and stage_file.suffix == ".xlsx":
                 file_list.append(stage_file)
 
         return file_list
-
-"""
-    #-------------------------------------------------------------------------------------------------------------------------------
-#    @function_logger
-#    def close(self):
-#        pass
-
-
-#          self._output_report.print_footer(self._max_return_code)
-#          self._output_report = None
-
-#          return
-#
-#          #  final_return_code = this_app._max_return_code
-#          #  this_app = None  # clean up
-#          #  exit(final_return_code)
-#
-#      @function_logger
-#      def set_stage_dir_path(self):
-#          # -----------------------------------------------------------------------------
-#          #  The stage directory is expected to be in the current working directory and should be named "stage".i
-#          #  The name of the stage directory can be overridden by setting the "stage_dir" parameter in the config file.
-#          # -----------------------------------------------------------------------------
-#
-#          stage_dir = "stage"
-#
-#          cfg_stage_dir = self.cfg_file_params.get("stage_dir")
-#          if cfg_stage_dir:
-#              stage_dir = cfg_stage_dir
-#
-#          stage_dir_path = Path(stage_dir)
-#          stage_dir_path = stage_dir_path.absolute()
-#
-#          if not stage_dir_path.exists():
-#              self.report(f"Stage directory {stage_dir_path} does not exist.\n")
-#              self._output_report.print_footer(1)
-#              return None
-#          if not stage_dir_path.is_dir():
-#              self.report(f"Stage directory {stage_dir_path} is not a directory.\n")
-#              self._output_report.print_footer(1)
-#              return None
-#
-#          self.report(f"processing files in {stage_dir_path}\n")
-#          return stage_dir_path
-#
-#
-#          self._max_return_code = 0
-#
-#          self._output_report = StdReport("tro_banking", self.__version__)
-#
-#          environment = environ.get('ENVIRONMENT', 'undefined')
-#          if environment not in ["devl", "test", "prod"]:
-#              raise ValueError(f"Invalid environment - {environment}")
-#
-#          self._yaml_cfg = self.load_yaml_cfg(environment)
-#          self._db_conn = get_database_connection(environment, self._yaml_cfg)
-#          self._stage_dir_path = self.set_stage_dir_path()
-    @function_logger
-    def set_command_line_values(self):
-        super().set_command_line_values()   
-"""

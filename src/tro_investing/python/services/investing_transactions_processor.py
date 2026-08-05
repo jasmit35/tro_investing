@@ -4,25 +4,25 @@ investing_transactions_processor.py
 This module provides the InvestingTransactionsProcessor class for processing
 transactions from an Excel spreadsheet.
 """
+
 from datetime import datetime
 from math import isnan
 from pathlib import Path
 
 import pandas as pd
+from fire_starter import function_logger
 from python.models.database.accounts import Accounts
 from python.models.database.categories import Categories
 from python.models.database.invest_trans import InvestTran, InvestTrans
 from python.models.database.securites import Securities
-from python.services.std_logging import function_logger
 
 
 # ======================================================================
 class InvestingTransactionsProcessor:
-
-    #--------------------------------------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------------------------------------------
     #  Dunder methods
-    def __init__(self, logger, report, db_conn, file_path):
-        self._logger = logger 
+    def __init__(self, logger, report, db_conn, file_path) -> None:
+        self._logger = logger
         self._logger.info(f"Begin 'InvestingTransactionsProcessor.__init__({file_path=})")
         self._report = report
         self._db_conn = db_conn
@@ -34,11 +34,11 @@ class InvestingTransactionsProcessor:
         self._securities = Securities(self._db_conn)
 
         self._logger.info("End   'InvestingTransactionsProcessor.__init__()")
-    
-    def __str__(self):
+
+    def __str__(self) -> str:
         return f"InvestingTransactionsProcessor({self._file_path=})"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"InvestingTransactionsProcessor({self._file_path=})"
 
     # ----------------------------------------------------------------------
@@ -59,7 +59,7 @@ class InvestingTransactionsProcessor:
         else:
             self.report("\n\n    The following new securities have been added:\n")
             for security_name in new_security_names:
-                self.report(f"      {security_name}\n") 
+                self.report(f"      {security_name}\n")
 
         #  Check for any new categories and add them to the database
         new_category_names = self._categories.check_for_new_categories(dataframe)
@@ -68,7 +68,7 @@ class InvestingTransactionsProcessor:
         else:
             self.report("\n\n    The following new categories have been added:\n")
             for category_name in new_category_names:
-                self.report(f"      {category_name}\n") 
+                self.report(f"      {category_name}\n")
 
     # ----------------------------------------------------------------------
     @function_logger
@@ -104,7 +104,7 @@ class InvestingTransactionsProcessor:
 
     # --------------------------------------------------------------------------------------------------
     #  Short cut to report a single message
-    def report(self, msg):
+    def report(self, msg) -> None:
         self._report.report(msg)
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -121,11 +121,24 @@ class InvestingTransactionsProcessor:
         dataframe = dataframe.dropna(axis=1, how="all")
 
         #  Assign the desired column names
-        dataframe.columns = ['Date', 'Account', 'Action', 'Security', 'Symbol', 'Category', 'Memo',
-            'Price', 'Shares', 'Commission', 'Cash', 'Invested', 'cash+invested']
+        dataframe.columns = [
+            "Date",
+            "Account",
+            "Action",
+            "Security",
+            "Symbol",
+            "Category",
+            "Memo",
+            "Price",
+            "Shares",
+            "Commission",
+            "Cash",
+            "Invested",
+            "cash+invested",
+        ]
 
         #  Drop the rows that don't have an action since they are not transactions.
-        dataframe.dropna(subset=['Action'], inplace=True)
+        dataframe.dropna(subset=["Action"], inplace=True)
 
         # Fill in blank values with the previous value for the listed columns
         cols = ["Date", "Account"]
@@ -134,15 +147,15 @@ class InvestingTransactionsProcessor:
         # Fill in some of the NaN values
         dataframe.fillna({"Security": "Unknown"}, inplace=True)
         dataframe.fillna({"Category": "Unknown"}, inplace=True)
-        
+
         dataframe.fillna({"Memo": ""}, inplace=True)
         dataframe.fillna({"Symbol": ""}, inplace=True)
-        
+
         dataframe.fillna({"Shares": 0}, inplace=True)
         dataframe.fillna({"Commission": 0}, inplace=True)
-        dataframe.fillna({"Cash": 0}, inplace=True)            
+        dataframe.fillna({"Cash": 0}, inplace=True)
 
-        return dataframe   
+        return dataframe
 
     # ----------------------------------------------------------------------
     @function_logger
@@ -166,28 +179,28 @@ class InvestingTransactionsProcessor:
 
             #  Skip rows that don't have a valid security.
             if type(row.Security) is None:
-                continue    
+                continue
 
             # Use data from each dataframe row to create an InvestTran object and insert it
             nt = InvestTran()
 
             #  Get the values for the foreign keys
-            nt.account_fk  = self._accounts.get_by_name(row.Account, True)._account_id
+            nt.account_fk = self._accounts.get_by_name(row.Account, True)._account_id
             nt.security_fk = self._securities.get_by_name(row.Security, True)._security_id
             nt.category_fk = self._categories.get_by_name(row.Category, True)._category_id
 
             #  Set the remaining values for the transaction record.
             nt.transaction_date = row.Date
-            nt.action           = row.Action
-            nt.symbol           = row.Symbol
-            nt.memo             = row.Memo
+            nt.action = row.Action
+            nt.symbol = row.Symbol
+            nt.memo = row.Memo
 
-            nt.price            = row.Price
-            nt.shares           = row.Shares
-            nt.commission       = row.Commission
-            nt.data_source      = "quicken"
+            nt.price = row.Price
+            nt.shares = row.Shares
+            nt.commission = row.Commission
+            nt.data_source = "quicken"
 
-            if isnan(row.Invested): 
+            if isnan(row.Invested):
                 nt.amount = row.Cash
             else:
                 nt.amount = row.Invested

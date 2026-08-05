@@ -8,19 +8,19 @@ from pathlib import Path
 
 class StdReport:
     #  -----------------------------------------------------------------------------
-    def __init__(self, app_name = "Hello World", version="v0.0.0.0", rpt_dir="reports"):
+    def __init__(self, app_name="Hello World", version="v0.0.0.0", rpt_dir="reports"):
         self._app_name = app_name
         self._version = version
         self._rpt_dir = rpt_dir
 
         rpt_file_path = Path(self._rpt_dir) / f"{self._app_name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}.rpt"
-        self._file = open(rpt_file_path, "w")   # noqa: SIM115
+        self._file = open(rpt_file_path, "w")  # noqa: SIM115
 
-    #-----------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------
     def __str__(self):
         return "StdReport"
 
-    #-----------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------
     def __repr__(self):
         return "StdReport"
 
@@ -33,7 +33,7 @@ class StdReport:
         self._file.write(output_string)
 
     #  -----------------------------------------------------------------------------
-    def print_header(self):
+    def print_header(self) -> None:
         start_date = datetime.today().strftime("%m/%d/%y")
         start_time = datetime.today().strftime("%H:%M:%S %z")
 

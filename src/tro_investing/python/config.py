@@ -1,18 +1,20 @@
 """
-config.py
+tro_investing config.py
+
+Use the cofiuration file to set up the app's configuration, including database connection and logging level.
 """
+
 from os import environ
 from pathlib import Path
 
+from fire_starter import function_logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 from python.services.std_dbconn import DatabaseConnection
-from python.services.std_logging import function_logger
 
 
-#----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 @function_logger
-def configure_app(app):
+def configure_app(app) -> None:
     #  Determine the config file path based on the app's environment and log it.
     app._environment = environ.get("ENVIRONMENT", "prod")
     config_dir = Path.cwd() / "etc"
@@ -52,8 +54,9 @@ def configure_app(app):
         password=app._settings.db_password,
         host=app._settings.host,
         port=app._settings.port,
-        )
+    )
 
     app._logger.level = app._settings.log_level
 
-#----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------

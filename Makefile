@@ -4,6 +4,47 @@ include env
 
 #-------------------------------------------------------------------------------
 
+lint: ## Run ruff to lint the code
+	uv run ruff format
+	uv run mypy src/
+
+#-------------------------------------------------------------------------------
+
+format: ## Run ruff to format the code
+	uv run ruff check --fix
+
+#-------------------------------------------------------------------------------
+
+unit-test: ## Run the unit test
+	@echo "🚀 Testing code..."
+	uv run pytest --cov=my_package \
+	--cov-report=term-missing tests/unit
+
+#-------------------------------------------------------------------------------
+
+integration-test: ## Run the integration test
+	uv run pytest \
+	tests/unit tests/integration
+
+#-------------------------------------------------------------------------------
+
+.PHONY: clean
+clean: ## Clean up from the last app run before the next
+	- rm /mnt/nfs_storage/${ENVIRONMENT}/tro_investing/logs/*.log
+#
+	- rm /mnt/nfs_storage/${ENVIRONMENT}/tro_investing/reports/*.rpt
+#  @rm src/${app_name}/logs/*.log
+#  @rm src/${app_name}/reports/*.rpt
+#  @mv src/${app_name)/stage/*.xlsx.bkp src/${app_name)/stage/*.xlsx
+--------------------: ## ----------------------------------
+
+setup: ## Set up the pre-commit environment
+	uv sync
+	uv run pre-commit install
+
+--------------------: ## ----------------------------------
+
+
 .PHONY: build-image
 build-image: ## Build the Docker image
 	@echo "🚀  Building our docker image..."
@@ -17,21 +58,10 @@ build-image: ## Build the Docker image
 
 #-------------------------------------------------------------------------------
 
-.PHONY: start-service 
+.PHONY: start-service
 start-service: ## Start a service on the swarm cluster using the image
 	@echo "🚀  Starting the service ..."
 	ansible-playbook -i ansible/inventory/test_swarm.yaml ansible/playbooks/start_$(ENVIRONMENT)_service.yaml
-
-#-------------------------------------------------------------------------------
-
-.PHONY: clean
-clean: ## Remove old files to prepare for a test run
-	- rm /mnt/nfs_storage/${ENVIRONMENT}/tro_investing/logs/*.log
-#
-	- rm /mnt/nfs_storage/${ENVIRONMENT}/tro_investing/reports/*.rpt
-#  @rm src/${app_name}/logs/*.log
-#  @rm src/${app_name}/reports/*.rpt
-#  @mv src/${app_name)/stage/*.xlsx.bkp src/${app_name)/stage/*.xlsx
 
 ################################################################################
 

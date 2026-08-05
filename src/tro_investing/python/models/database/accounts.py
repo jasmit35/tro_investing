@@ -5,20 +5,24 @@ Model for managing account information in the database.
 
 from dataclasses import dataclass
 
+from fire_starter import function_logger, getLogger
 from python.services.std_dbconn import DatabaseConnection
-from python.services.std_logging import function_logger, getLogger
 
 
 @dataclass
 class Account:
-    _account_id: int = 0 
+    _account_id: int = 0
     _account_name: str = None
-    _account_type: str = "unknown" 
+    _account_type: str = "unknown"
+
 
 class Accounts:
+    _logger: any = None
+    _database_connection: DatabaseConnection = None
+
     # ------------------------------------------------------------------------------------------------------------------
     def __init__(self, database_connection: DatabaseConnection):
-        self._logger = getLogger()
+        self._logger = getLogger("fire_starter")
         self._logger.debug(f"Begin 'Accounts.__init__' arguments - ({database_connection=})")
 
         self._database_connection = database_connection
@@ -32,17 +36,17 @@ class Accounts:
         return "Accounts"
 
     # ----------------------------------------------------------------------
-    def get_by_name(self, account_name: str, insert_missing: bool=False) -> Account:
+    def get_by_name(self, account_name: str, insert_missing: bool = False) -> Account:
         sql = "SELECT * FROM tro.accounts WHERE account_name = %s"
 
         with self._database_connection.get_cursor() as cursor:
-            cursor.execute(sql, (account_name, ))
+            cursor.execute(sql, (account_name,))
             results = cursor.fetchone()
 
-        the_account = None if results is None else Account(
-            _account_id=results[0],
-            _account_name=results[1],
-            _account_type=results[2]
+        the_account = (
+            None
+            if results is None
+            else Account(_account_id=results[0], _account_name=results[1], _account_type=results[2])
         )
 
         if the_account is None and insert_missing is True:
@@ -67,7 +71,6 @@ class Accounts:
     def check_for_new_accounts(self, dataframe):
         new_account_names = []
         for account_name in dataframe["Account"].unique():
-
             #  Check if the account exists in the database
             account = self.get_by_name(account_name)
 
@@ -79,4 +82,5 @@ class Accounts:
 
         return new_account_names
 
-#======================================================================================================================
+
+# ======================================================================================================================
