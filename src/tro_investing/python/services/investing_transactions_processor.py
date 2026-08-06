@@ -17,9 +17,9 @@ from python.models.database.invest_trans import InvestTran, InvestTrans
 from python.models.database.securites import Securities
 
 
-#======================================================================
+# ======================================================================
 class InvestingTransactionsProcessor:
-    #--------------------------------------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------------------------------------------
     #  Dunder methods
     def __init__(self, logger, report, db_conn, file_path) -> None:
         self._logger = logger
@@ -41,7 +41,7 @@ class InvestingTransactionsProcessor:
     def __repr__(self) -> str:
         return f"InvestingTransactionsProcessor({self._file_path=})"
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def check_for_new_stuff(self, dataframe):
         #  Check for any new accounts and add them to the database
         new_account_names = self._accounts.check_for_new_accounts(dataframe)
@@ -70,7 +70,7 @@ class InvestingTransactionsProcessor:
             for category_name in new_category_names:
                 self.report(f"      {category_name}\n")
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @function_logger
     def process_file(self):
         """
@@ -102,12 +102,12 @@ class InvestingTransactionsProcessor:
 
         return rc
 
-    #--------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------
     #  Short cut to report a single message
     def report(self, msg) -> None:
         self._report.report(msg)
 
-    #------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     @function_logger
     def massage_data(self, dataframe):
         """
@@ -157,7 +157,7 @@ class InvestingTransactionsProcessor:
 
         return dataframe
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @function_logger
     def load_transactions_from_dataframe(self, dataframe):
         """
@@ -218,7 +218,7 @@ class InvestingTransactionsProcessor:
 
         return 0
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @function_logger
     def extract_date_range(self) -> tuple[datetime, datetime]:
         df = pd.read_excel(self._file_path, engine="openpyxl")

@@ -29,7 +29,7 @@ class TroInvesting(StdApp):
         self._report_dir_path = Path.cwd() / "reports"
         self._stage_dir_path = Path.cwd() / "stage"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"TroInvesting(f'{self._output_report=}, {self._stage_dir_path=}')"
 
     def __str__(self) -> str:
@@ -37,7 +37,7 @@ class TroInvesting(StdApp):
 
     #-------------------------------------------------------------------------------------------------------------------------------
     @function_logger
-    def process_investing_file(self):
+    def process_investing_file(self) -> None:
         rc: int = 98
 
         file_list = self.search_for_investing_files()
@@ -72,12 +72,12 @@ class TroInvesting(StdApp):
     #-------------------------------------------------------------------------------------------------------------------------------
     #  Short cut to report messages to the output report.
     @function_logger
-    def report(self, message: str):
+    def report(self, message: str) -> None:
         self._output_report.report(message)
 
     #-------------------------------------------------------------------------------------------------------------------------------
     @function_logger
-    def run(self):
+    def run(self) -> int:
         run_time = datetime.now().strftime("%H:%M")
         self._logger.info(f"run time : {run_time} - processing files\n")
 
