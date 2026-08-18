@@ -1,17 +1,17 @@
 ---
 
-- name: Start prod service 
+- name: Start prod service
   hosts: prod-swarm-manager-2
 
   tasks:
 
     - name: Start the TRO Investing service on the prod swarm cluster.
       community.docker.docker_swarm_service:
-        name: tro_investing 
-        image: jasmit/tro_investing:v26.1.0.0.3
+        name: tro_investing
+        image: jasmit/tro_investing:v26.1.0.0.4
         env:
           ENVIRONMENT: "prod"
-        debug: false 
+        debug: false
         mounts:
           - source=/mnt/nfs_storage/prod/tro_investing/logs
             target=/opt/app/tro_investing/logs

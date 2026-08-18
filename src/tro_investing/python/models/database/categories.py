@@ -6,10 +6,9 @@ This module is used to interact with the 'categories' table in the database.
 from dataclasses import dataclass
 
 from fire_starter import function_logger, getLogger
-from python.services.std_dbconn import DatabaseConnection
 
 
-# =======================================================================================================================
+# ======================================================================================================================
 @dataclass
 class Category:
     _category_id: int = 0
@@ -20,9 +19,9 @@ class Category:
     _category_hidden: bool = False
 
 
-# =======================================================================================================================
+# ======================================================================================================================
 class Categories:
-    def __init__(self, database_connection: DatabaseConnection):
+    def __init__(self, database_connection: any):
         self._logger = getLogger()
         self._logger.debug(f"Begin 'Categories.__init__({database_connection=})")
 
@@ -36,12 +35,12 @@ class Categories:
     def __repr__(self):
         return "Categories"
 
-    # ----------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     #  @function_logger  #  Generates too much log output to be useful
     def get_by_name(self, category_name: str, insert_missing: bool = False) -> Category:
         sql = "SELECT * FROM tro.categories WHERE category_name = %s"
 
-        with self._database_connection.get_cursor() as cursor:
+        with self._database_connection.cursor() as cursor:
             cursor.execute(sql, (category_name,))
             results = cursor.fetchone()
 
@@ -69,7 +68,7 @@ class Categories:
     def insert(self, category: Category) -> int:
         sql = "INSERT INTO tro.categories VALUES (DEFAULT, %s, %s, %s, %s, %s) RETURNING category_id"
 
-        with self._database_connection.get_cursor() as cursor:
+        with self._database_connection.cursor() as cursor:
             cursor.execute(
                 sql,
                 (
@@ -94,7 +93,7 @@ class Categories:
                     category_group_fk = %s
             where category_id = %s
             """
-        with self._database_connection.get_cursor() as cursor:
+        with self._database_connection.cursor() as cursor:
             cursor.execute(
                 sql,
                 (
@@ -114,7 +113,7 @@ class Categories:
             delete from tro.categories
             where category_id = %s
         """
-        with self._database_connection.get_cursor() as cursor:
+        with self._database_connection.cursor() as cursor:
             cursor.execute(sql, (category_id,))
             rows_deleted = cursor.rowcount
 
@@ -128,7 +127,7 @@ class Categories:
             insert into tro.categories OVERRIDING SYSTEM VALUE values (0, 'Uncategorized', 0, 0);
             select setval('tro.categories_category_id_seq', 1, false);
         """
-        with self._database_connection.get_cursor() as cursor:
+        with self._database_connection.cursor() as cursor:
             cursor.execute(sql)
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -137,7 +136,7 @@ class Categories:
         sql = """
             select count(*) from tro.categories;
         """
-        with self._database_connection.get_cursor() as cursor:
+        with self._database_connection.cursor() as cursor:
             cursor.execute(sql)
             row_count = cursor.fetchone()[0]
 

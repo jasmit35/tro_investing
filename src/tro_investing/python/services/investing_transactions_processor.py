@@ -6,11 +6,14 @@ transactions from an Excel spreadsheet.
 """
 
 from datetime import datetime
+from logging import getLogger
 from math import isnan
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from fire_starter import function_logger
+from psycopg import connect
 from python.models.database.accounts import Accounts
 from python.models.database.categories import Categories
 from python.models.database.invest_trans import InvestTran, InvestTrans
@@ -19,13 +22,11 @@ from python.models.database.securites import Securities
 
 # ======================================================================
 class InvestingTransactionsProcessor:
-    # --------------------------------------------------------------------------------------------------------------------------------------------
-    #  Dunder methods
-    def __init__(self, logger, report, db_conn, file_path) -> None:
-        self._logger = logger
-        self._logger.info(f"Begin 'InvestingTransactionsProcessor.__init__({file_path=})")
+    def __init__(self, report: Any, db_conn: connect, file_path: Any) -> None:
         self._report = report
-        self._db_conn = db_conn
+        self._logger = getLogger()
+        self._logger.info(f"Begin 'InvestingTransactionsProcessor.__init__({file_path=})")
+        self._db_conn: connect = db_conn
         self._file_path = file_path
 
         self._accounts = Accounts(self._db_conn)
@@ -35,6 +36,8 @@ class InvestingTransactionsProcessor:
 
         self._logger.info("End   'InvestingTransactionsProcessor.__init__()")
 
+    # ------------------------------------------------------------------------------------------------------------------
+    #  Dunder methods
     def __str__(self) -> str:
         return f"InvestingTransactionsProcessor({self._file_path=})"
 

@@ -6,7 +6,6 @@ Model for managing account information in the database.
 from dataclasses import dataclass
 
 from fire_starter import function_logger, getLogger
-from python.services.std_dbconn import DatabaseConnection
 
 
 @dataclass
@@ -18,10 +17,10 @@ class Account:
 
 class Accounts:
     _logger: any = None
-    _database_connection: DatabaseConnection = None
+    _database_connection: any = None
 
     # ------------------------------------------------------------------------------------------------------------------
-    def __init__(self, database_connection: DatabaseConnection):
+    def __init__(self, database_connection: any):
         self._logger = getLogger("fire_starter")
         self._logger.debug(f"Begin 'Accounts.__init__' arguments - ({database_connection=})")
 
@@ -39,7 +38,7 @@ class Accounts:
     def get_by_name(self, account_name: str, insert_missing: bool = False) -> Account:
         sql = "SELECT * FROM tro.accounts WHERE account_name = %s"
 
-        with self._database_connection.get_cursor() as cursor:
+        with self._database_connection.cursor() as cursor:
             cursor.execute(sql, (account_name,))
             results = cursor.fetchone()
 
@@ -60,7 +59,7 @@ class Accounts:
 
         sql = "INSERT INTO tro.accounts VALUES (DEFAULT, %s, %s) RETURNING account_id"
 
-        with self._database_connection.get_cursor() as cursor:
+        with self._database_connection.cursor() as cursor:
             cursor.execute(sql, (account._account_name, account._account_type))
             account_id = cursor.fetchone()[0]
 

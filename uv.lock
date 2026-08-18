@@ -127,6 +127,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pandas-stubs"
+version = "3.0.5.260730"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c2/d2/dea4a3a56b7b5f69c5fbca9f14625fcf28e1a39a657e9833d4a10bcac593/pandas_stubs-3.0.5.260730.tar.gz", hash = "sha256:f70a232c57d93a5a2c81f8a53953e10891a5374bc92652277deb325e2e4d0ff3", size = 114631, upload-time = "2026-07-30T14:31:42.271Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/60/c2/959caec5c46f484b5f8bb6def4b0cf7a45ba6acda26f12b75142d98cc5ae/pandas_stubs-3.0.5.260730-py3-none-any.whl", hash = "sha256:60e90e3e1eda6937e337e243cbe6217e151c11137cd7eddf832af537c7310bfd", size = 174807, upload-time = "2026-07-30T14:31:41.17Z" },
+]
+
+[[package]]
 name = "pathlib"
 version = "1.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -330,13 +342,14 @@ wheels = [
 
 [[package]]
 name = "tro-investing"
-version = "26.1.0.0.3"
+version = "26.1.0.0.4"
 source = { virtual = "." }
 dependencies = [
     { name = "datetime" },
     { name = "fire-starter" },
     { name = "openpyxl" },
     { name = "pandas" },
+    { name = "pandas-stubs" },
     { name = "pathlib" },
     { name = "pq" },
     { name = "psycopg", extra = ["binary"] },
@@ -348,7 +361,9 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "pandas-stubs" },
     { name = "ruff" },
+    { name = "types-psycopg2" },
 ]
 
 [package.metadata]
@@ -357,6 +372,7 @@ requires-dist = [
     { name = "fire-starter", directory = "/Users/jeff/devl/other_computer_projects/fire_starter" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "pandas", specifier = ">=3.0.3" },
+    { name = "pandas-stubs", specifier = ">=3.0.5.260730" },
     { name = "pathlib", specifier = ">=1.0.1" },
     { name = "pq", specifier = ">=1.9.1" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.4" },
@@ -367,7 +383,20 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "ruff", specifier = ">=0.16.1" }]
+dev = [
+    { name = "pandas-stubs", specifier = ">=3.0.5.260730" },
+    { name = "ruff", specifier = ">=0.16.1" },
+    { name = "types-psycopg2", specifier = ">=2.9.21.20260724" },
+]
+
+[[package]]
+name = "types-psycopg2"
+version = "2.9.21.20260724"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/29/09ca8f0ad16105193deabcaf8256059e361e9e37ff24551efd9c739e240b/types_psycopg2-2.9.21.20260724.tar.gz", hash = "sha256:db31031c37de823a2b21c787cb84832174fdda2a99a8b1af648206f19cc32f8c", size = 27644, upload-time = "2026-07-24T04:57:36.61Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cb/90/1e77eb76030bb5feb249ecb41cd7647c6ae831ec7bd2b61a61beecac4029/types_psycopg2-2.9.21.20260724-py3-none-any.whl", hash = "sha256:4f87890dd06cea99e3bb0536330ffc2a7320e69059dc1ee0e2c884ef2718f2b4", size = 24964, upload-time = "2026-07-24T04:57:35.703Z" },
+]
 
 [[package]]
 name = "typing-extensions"

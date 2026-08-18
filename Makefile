@@ -98,14 +98,14 @@ clean-build: ## Clean up any crap from previous builds
 	@uv run python -c "import shutil; import os; shutil.rmtree('dist') if os.path.exists('dist') else None"
 
 .PHONY: publish
-publish: ## Publish a release to PyPI.
+publish: # Publish a release to PyPI.
 	@echo "🚀 Publishing: Dry run."
 	@uvx --from build pyproject-build --installer uv
 	@echo "🚀 Publishing."
 	@uvx twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
 
-.PHONY: build-and-publish
-build-and-publish: build publish ## Build and publish.
+#  .PHONY: build-and-publish
+#  build-and-publish: build publish ## Build and publish.
 
 .PHONY: docs-test
 docs-test: ## Test if documentation can be built without warnings or errors

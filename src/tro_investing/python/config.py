@@ -10,7 +10,7 @@ from pathlib import Path
 from fire_starter import function_logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from python.services.std_dbconn import DatabaseConnection
+#  from python.services.std_dbconn import DatabaseConnection
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -49,13 +49,13 @@ def configure_app(app) -> None:
     app._settings = All_Settings()
     app._logger.debug(f"settings model dump is {app._settings.model_dump()}\n")
 
-    app._database_connection = DatabaseConnection(
-        database=app._settings.db_name,
-        user_id=app._settings.db_user,
-        password=app._settings.db_password,
-        host=app._settings.host,
-        port=app._settings.port,
-    )
+    #      app._database_connection = DatabaseConnection(
+    #          database=app._settings.db_name,
+    #          user_id=app._settings.db_user,
+    #          password=app._settings.db_password,
+    #          host=app._settings.host,
+    #          port=app._settings.port,
+    #      )
 
     app._logger.level = app._settings.log_level
 

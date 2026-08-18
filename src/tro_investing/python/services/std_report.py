@@ -52,7 +52,7 @@ class StdReport:
         self._file.write(("-" * 132) + "\n")
 
     #  -----------------------------------------------------------------------------
-    def print_footer(self, return_code):
+    def print_footer(self, return_code) -> None:
         end_date = datetime.today().strftime("%m/%d/%y %H:%M:%S %z")
 
         self.report(("-" * 132) + "\n")

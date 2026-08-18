@@ -6,6 +6,9 @@ Support for managing investing transactions in the database.
 
 import datetime
 from dataclasses import dataclass
+from logging import getLogger
+
+from psycopg import connect
 
 
 # ======================================================================================================================
@@ -28,29 +31,30 @@ class InvestTran:
 
 # ======================================================================================================================
 class InvestTrans:
-    def __init__(self, database_connection):
-        self._database_connection = database_connection
+    def __init__(self, database_connection: connect) -> None:
+        self._logger = getLogger()
+        self._database_connection: connect = database_connection
 
-    # -------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     def delete_range(self, start_date, end_date) -> int:
         sql = """
             DELETE FROM tro.invest_trans
             WHERE transaction_date >= %s AND transaction_date <= %s
             AND data_source = 'quicken'
             """
-        with self._database_connection.get_cursor() as cursor:
+        with self._database_connection.cursor() as cursor:
             cursor.execute(sql, (start_date, end_date))
 
-        return cursor.rowcount
+            #  return cursor.rowcount
 
-    # -------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     def insert(self, trans) -> int:
         sql = """
             INSERT INTO tro.invest_trans
             VALUES (DEFAULT, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING transaction_id
         """
-        with self._database_connection.get_cursor() as cursor:
+        with self._database_connection.cursor() as cursor:
             cursor.execute(
                 sql,
                 (

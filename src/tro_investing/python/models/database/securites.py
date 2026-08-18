@@ -10,23 +10,23 @@ from dataclasses import dataclass
 # ======================================================================================================================
 @dataclass
 class Security:
-    _security_id: int = None
-    _security_name: str = None
-    _security_symbol: str = None
+    _security_id: int
+    _security_name: str
+    _security_symbol: str
     _security_type: str
     _security_class: str
 
 
 # ======================================================================================================================
 class Securities:
-    def __init__(self, db_conn):
-        self._db_conn = db_conn
+    def __init__(self, db_conn) -> None:
+        self._database_connection = db_conn
 
-    # ----------------------------------------------------------------------------------------------------------------------
-    def get_by_name(self, security_name=None, insert_missing=False):
+    # ------------------------------------------------------------------------------------------------------------------
+    def get_by_name(self, security_name=None, insert_missing=False) -> Security:
         sql = "select * from tro.securities where security_name = %s"
 
-        with self._db_conn.get_cursor() as cursor:
+        with self._database_connection.cursor() as cursor:
             cursor.execute(sql, (security_name,))
             results = cursor.fetchone()
 
@@ -50,11 +50,11 @@ class Securities:
 
         return the_security
 
-    # ----------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     def insert(self, security):
         sql = "insert into tro.securities values (DEFAULT, %s, %s, %s, %s) returning security_id"
 
-        with self._db_conn.get_cursor() as cursor:
+        with self._database_connection.cursor() as cursor:
             cursor.execute(
                 sql,
                 (security._security_name, security._security_symbol, security._security_type, security._security_class),
@@ -63,7 +63,7 @@ class Securities:
 
         return security_id
 
-    # ----------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     def check_for_new_securities(self, dataframe):
         new_security_names = []
 

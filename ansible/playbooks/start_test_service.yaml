@@ -1,14 +1,14 @@
 ---
 
-- name: Start test service 
+- name: Start test service
   hosts: test-swarm-manager-2
 
   tasks:
 
     - name: Start the TRO Investing service on the test swarm cluster.
       community.docker.docker_swarm_service:
-        name: tro_investing 
-        image: jasmit/tro_investing:v26.1.0.0.3
+        name: tro_investing
+        image: jasmit/tro_investing:v26.1.0.0.4
         env:
           ENVIRONMENT: "test"
         debug: true
