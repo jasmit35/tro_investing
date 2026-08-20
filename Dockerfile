@@ -1,17 +1,19 @@
 ##===============================================================================
-##  Build a TRO investing image using uv 
+##  Build a TRO investing image using uv
 ##===============================================================================
 
 ##-------------------------------------------------------------------------------
 ##  Prep an OS
 ##-------------------------------------------------------------------------------
 
-FROM python:3.13-slim AS builder
+FROM python:3.14-slim AS builder
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 
 WORKDIR /app
 
 COPY pyproject.toml README.md ./
+COPY fire_starter /app/fire_starter
 RUN uv sync
 
 ##  Add additional software and upgrade all to current
@@ -26,7 +28,7 @@ RUN apt-get update && \
 ##  Build out the image
 ##-------------------------------------------------------------------------------
 
-FROM python:3.13-slim
+FROM python:3.14-slim
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 ##  Varables used for the build only
@@ -40,13 +42,15 @@ RUN ln -sf /usr/share/zoneinfo/America/Chicago /etc/localtime && \
 ##  Get the application code set up
 WORKDIR ${APP_HOME}
 COPY --from=builder /app .
-COPY src/tro_investing . 
+COPY src/tro_investing .
 
 ##  Application userid
 RUN groupadd -g 20000 appgroup && \
     useradd -u 20001 -g appgroup -m -s /bin/bash appowner
 
-RUN chown -R appowner:appgroup . 
+RUN chown -R appowner:appgroup .
+RUN chmod 755 ${APP_HOME}/.venv/bin/python3
+
 
 ##-------------------------------------------------------------------------------
 ##  Do it...
@@ -58,4 +62,3 @@ ENV PATH="${APP_HOME}/.venv/bin:${PATH}"
 ENV PYTHONPATH="${APP_HOME}"
 ENTRYPOINT [ "uv", "run", "python/main.py"]
 #  CMD ["sleep", "3600"]
-

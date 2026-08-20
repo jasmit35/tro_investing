@@ -10,4 +10,5 @@ secrets/
 */*.rpt
 *.bkp
 */*.bkp
-
+#----------------------
+fire_starter/

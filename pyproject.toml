@@ -43,7 +43,7 @@ testpaths = ["test"]
 addopts = "-v --tb=short"
 
 [tool.uv.sources]
-fire-starter = { path = "/Users/jeff/devl/other_computer_projects/fire_starter" }
+fire-starter = { path = "./fire_starter" }
 
 [dependency-groups]
 dev = [
